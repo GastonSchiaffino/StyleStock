@@ -1,0 +1,147 @@
+/* === BASE === */
+.root {
+    -fx-font-family: "Segoe UI";
+    -fx-background-color: #1E1E1E;
+}
+
+/* === HEADER (barra superior) === */
+.hbox {
+    -fx-background-color: #000000;
+    -fx-padding: 10;
+    -fx-alignment: center-right;
+}
+
+/* === SIDEBAR === */
+.vbox {
+    -fx-background-color: #000000;
+    -fx-padding: 20;
+}
+
+/* === BOTONES DEL MENÚ === */
+.menu-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #E0E0E0;
+    -fx-font-size: 14px;
+    -fx-alignment: center-left;
+    -fx-padding: 8 12 8 12;
+    -fx-background-radius: 6;
+}
+
+.menu-button:hover {
+    -fx-background-color: #3A4A5A;
+}
+
+.menu-button:focused {
+    -fx-background-color: #506A85;
+}
+
+/* === ÁREA CENTRAL === */
+.stack-pane {
+    -fx-background-color: #1E1E1E;
+    -fx-text-fill: #CCCCCC;
+}
+
+/* === LABELS === */
+.label {
+    -fx-text-fill: #CCCCCC;
+}
+
+/* === TABLAS (TableView) === */
+.table-view {
+    -fx-background-color: #2D2D2D;
+    -fx-table-cell-border-color: #3A3A3A;
+    -fx-control-inner-background: #2D2D2D;
+    -fx-text-background-color: #E0E0E0;
+}
+
+.table-view .column-header-background {
+    -fx-background-color: #3A3A3A;
+}
+
+.table-row-cell {
+    -fx-background-color: #2D2D2D;
+}
+
+.table-row-cell:odd {
+    -fx-background-color: #252526;
+}
+
+.table-row-cell:selected {
+    -fx-background-color: #506A85;
+}
+
+/* === TEXTFIELDS Y COMBOBOXES === */
+.text-field, .combo-box, .date-picker {
+    -fx-background-color: #2D2D2D;
+    -fx-text-fill: #FFFFFF;
+    -fx-prompt-text-fill: #AAAAAA;
+    -fx-border-color: #3C3C3C;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+}
+
+/* === BOTONES GENERALES === */
+.button {
+    -fx-background-color: #3C3C3C;
+    -fx-text-fill: #FFFFFF;
+    -fx-font-weight: bold;
+    -fx-background-radius: 6;
+    -fx-cursor: hand;
+}
+
+.button:hover {
+    -fx-background-color: #505050;
+}
+
+.button:pressed {
+    -fx-background-color: #607D8B;
+}
+
+/* === TITLED PANES (ACORDEÓN DEL MENÚ) === */
+.menu-group {
+    -fx-text-fill: #E0E0E0;
+    -fx-background-color: #989596;
+    -fx-border-color: transparent;
+    -fx-background-radius: 6;
+    -fx-border-radius: 6;
+}
+
+.menu-group > .content {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-padding: 0 0 0 5;
+}
+
+.menu-group > .title {
+    -fx-background-color: #B5B2B3;
+    -fx-text-fill: #FFFFFF;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+    -fx-padding: 6 8 6 8;
+    -fx-background-radius: 6;
+}
+
+.menu-group > .title:hover {
+    -fx-background-color: #2E3C4D;
+}
+
+/* === SUBMENÚ BOTONES === */
+.submenu-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #CCCCCC;
+    -fx-font-size: 14px;
+    -fx-alignment: center-left;
+    -fx-padding: 6 8 6 8;
+    -fx-background-radius: 6;
+}
+
+.submenu-button:hover {
+    -fx-background-color: #3C4F65;
+}
+
+.menu-button, .submenu-button, .button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #E0E0E0;
+    -fx-background-radius: 6;
+    -fx-transition: all 0.2s ease-in-out;
+}

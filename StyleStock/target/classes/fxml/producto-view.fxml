@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<VBox spacing="8" xmlns:fx="http://javafx.com/fxml" fx:controller="com.style.stock.controller.ProductoController">
+    <padding>
+        <Insets top="10" right="10" bottom="10" left="10" />
+    </padding>
+    <HBox spacing="8">
+        <TextField fx:id="txtCodigo" promptText="Código" />
+        <TextField fx:id="txtDescripcion" promptText="Descripción" />
+        <TextField fx:id="txtPrecio" promptText="Precio" />
+        <TextField fx:id="txtStock" promptText="Stock" />
+        <Button fx:id="btnGuardar" text="Guardar" onAction="#guardarProductos"/>
+    </HBox>
+
+    <TableView fx:id="tablaProductos" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="colId" text="ID" prefWidth="50"/>
+            <TableColumn fx:id="colCodigo" text="Código" prefWidth="120"/>
+            <TableColumn fx:id="colDescripcion" text="Descripción" prefWidth="300"/>
+            <TableColumn fx:id="colPrecio" text="Precio" prefWidth="100"/>
+            <TableColumn fx:id="colStock" text="Stock" prefWidth="80"/>
+        </columns>
+    </TableView>
+
+    <HBox alignment="CENTER_RIGHT">
+        <Button fx:id="btnEliminar" text="Eliminar seleccionado" onAction="#eliminarProducto"/>
+    </HBox>
+</VBox>

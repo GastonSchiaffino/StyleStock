@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<VBox spacing="8" xmlns:fx="http://javafx.com/fxml" fx:controller="com.style.stock.controller.FacturaController">
+    <padding>
+        <Insets top="10" right="10" bottom="10" left="10" />
+    </padding>
+    <HBox spacing="8">
+        <Label text="Cliente:"/>
+        <ComboBox fx:id="cbClientes" prefWidth="250"/>
+        <Label text="Producto:"/>
+        <ComboBox fx:id="cbProductos" prefWidth="220"/>
+        <Label text="Cantidad:"/>
+        <TextField fx:id="txtCantidad" prefWidth="60"/>
+        <Button fx:id="btnAgregar" text="Agregar" onAction="#agregarItem"/>
+    </HBox>
+
+    <TableView fx:id="tablaItems" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="colCodigo" text="Código" prefWidth="120"/>
+            <TableColumn fx:id="colDescripcion"  text="Descripción" prefWidth="300"/>
+            <TableColumn fx:id="colPrecio"  text="Precio unit." prefWidth="100"/>
+            <TableColumn fx:id="colCantidad"  text="Cantidad" prefWidth="80"/>
+            <TableColumn fx:id="colSubtotal"  text="Subtotal" prefWidth="100"/>
+        </columns>
+    </TableView>
+
+    <HBox alignment="CENTER_RIGHT" spacing="8">
+        <Label text="Total:"/>
+        <Label fx:id="lblTotal" text="0.00"/>
+        <Button fx:id="btnGuardar" text="Guardar factura" onAction="#guardarFactura"/>
+        <Button fx:id="btnPDF" text="Generar PDF" onAction="#generarPDF"/>
+    </HBox>
+</VBox>
