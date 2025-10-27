@@ -3,7 +3,7 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.geometry.Insets?>
 
-<VBox spacing="10" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+<VBox spacing="10" xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.style.stock.controller.ClienteController">
     <padding>
         <Insets top="15" right="15" bottom="15" left="15" />

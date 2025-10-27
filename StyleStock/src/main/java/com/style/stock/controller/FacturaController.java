@@ -5,6 +5,7 @@ import com.style.stock.model.*;
 import com.style.stock.service.*;
 import com.style.stock.util.AlertUtils;
 import javafx.application.Platform;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -65,7 +66,7 @@ public class FacturaController {
         this.clienteService = new ClienteService();
         this.facturaService = new FacturaService();
         this.pdfService = new PDFService();
-        
+
         this.productos = FXCollections.observableArrayList();
         this.clientes = FXCollections.observableArrayList();
         this.items = FXCollections.observableArrayList();
@@ -81,16 +82,29 @@ public class FacturaController {
     }
 
     private void configurarTabla() {
-        colCodigo.setCellValueFactory(cellData -> 
-            new javafx.beans.property.SimpleStringProperty(cellData.getValue().getProducto().getCodigo()));
-        colDescripcion.setCellValueFactory(cellData ->
-            new javafx.beans.property.SimpleStringProperty(cellData.getValue().getProducto().getDescripcion()));
+        // CORREGIDO: Usar callback con verificación de null
+        colCodigo.setCellValueFactory(cellData -> {
+            DetalleFactura detalle = cellData.getValue();
+            if (detalle != null && detalle.getProducto() != null) {
+                return new SimpleStringProperty(detalle.getProducto().getCodigo());
+            }
+            return new SimpleStringProperty("");
+        });
+
+        colDescripcion.setCellValueFactory(cellData -> {
+            DetalleFactura detalle = cellData.getValue();
+            if (detalle != null && detalle.getProducto() != null) {
+                return new SimpleStringProperty(detalle.getProducto().getDescripcion());
+            }
+            return new SimpleStringProperty("");
+        });
+
         colPrecio.setCellValueFactory(new PropertyValueFactory<>("precioUnitario"));
         colCantidad.setCellValueFactory(new PropertyValueFactory<>("cantidad"));
         colSubtotal.setCellValueFactory(new PropertyValueFactory<>("subtotal"));
 
         // Formatear precio y subtotal
-        colPrecio.setCellFactory(col -> new TableCell<>() {
+        colPrecio.setCellFactory(col -> new TableCell<DetalleFactura, Double>() {
             @Override
             protected void updateItem(Double precio, boolean empty) {
                 super.updateItem(precio, empty);
@@ -98,7 +112,7 @@ public class FacturaController {
             }
         });
 
-        colSubtotal.setCellFactory(col -> new TableCell<>() {
+        colSubtotal.setCellFactory(col -> new TableCell<DetalleFactura, Double>() {
             @Override
             protected void updateItem(Double subtotal, boolean empty) {
                 super.updateItem(subtotal, empty);
@@ -112,7 +126,7 @@ public class FacturaController {
     private void configurarCombos() {
         cbClientes.setItems(clientes);
         cbProductos.setItems(productos);
-        
+
         cbTipoFactura.setItems(FXCollections.observableArrayList("A", "B", "C"));
         cbTipoFactura.setValue("A");
 
@@ -145,6 +159,11 @@ public class FacturaController {
         items.addListener((javafx.collections.ListChangeListener<DetalleFactura>) c -> {
             actualizarTotales();
         });
+
+        // Actualizar totales cuando cambia el descuento
+        txtDescuento.textProperty().addListener((obs, oldVal, newVal) -> {
+            actualizarTotales();
+        });
     }
 
     private void cargarDatos() {
@@ -160,8 +179,8 @@ public class FacturaController {
 
             } catch (DataAccessException e) {
                 logger.error("Error cargando datos", e);
-                Platform.runLater(() -> 
-                    AlertUtils.mostrarError("Error", "No se pudieron cargar los datos")
+                Platform.runLater(() ->
+                        AlertUtils.mostrarError("Error", "No se pudieron cargar los datos")
                 );
             }
         });
@@ -184,8 +203,8 @@ public class FacturaController {
 
             // Verificar stock
             if (producto.getStock() < cantidad) {
-                AlertUtils.mostrarAdvertencia("Stock insuficiente", 
-                    String.format("Stock disponible: %d unidades", producto.getStock()));
+                AlertUtils.mostrarAdvertencia("Stock insuficiente",
+                        String.format("Stock disponible: %d unidades", producto.getStock()));
                 return;
             }
 
@@ -230,9 +249,9 @@ public class FacturaController {
 
         // Confirmar
         Optional<ButtonType> confirmacion = AlertUtils.mostrarConfirmacion(
-            "Guardar Factura",
-            "¿Confirma que desea guardar esta factura?",
-            String.format("Total: $%.2f", calcularTotal())
+                "Guardar Factura",
+                "¿Confirma que desea guardar esta factura?",
+                String.format("Total: $%.2f", calcularTotal())
         );
 
         if (confirmacion.isEmpty() || confirmacion.get() != ButtonType.OK) {
@@ -246,7 +265,7 @@ public class FacturaController {
                 factura.setFecha(dpFecha.getValue());
                 factura.setTipo(Factura.TipoFactura.valueOf(cbTipoFactura.getValue()));
                 factura.setNotas(txtNotas.getText());
-                
+
                 double descuento = 0.0;
                 if (!txtDescuento.getText().trim().isEmpty()) {
                     descuento = Double.parseDouble(txtDescuento.getText().trim());
@@ -261,13 +280,13 @@ public class FacturaController {
                 Factura guardada = facturaService.crear(factura);
 
                 Platform.runLater(() -> {
-                    AlertUtils.mostrarExito("Éxito", 
-                        "Factura guardada correctamente\nNúmero: " + guardada.getNumeroFactura());
-                    
+                    AlertUtils.mostrarExito("Éxito",
+                            "Factura guardada correctamente\nNúmero: " + guardada.getNumeroFactura());
+
                     // Preguntar si desea generar PDF
                     Optional<ButtonType> generarPdf = AlertUtils.mostrarConfirmacion(
-                        "Generar PDF",
-                        "¿Desea generar el PDF de la factura?"
+                            "Generar PDF",
+                            "¿Desea generar el PDF de la factura?"
                     );
 
                     if (generarPdf.isPresent() && generarPdf.get() == ButtonType.OK) {
@@ -280,20 +299,23 @@ public class FacturaController {
 
             } catch (InsufficientStockException e) {
                 logger.warn("Stock insuficiente", e);
-                Platform.runLater(() -> 
-                    AlertUtils.mostrarAdvertencia("Stock Insuficiente", e.getMessage())
+                Platform.runLater(() ->
+                        AlertUtils.mostrarAdvertencia("Stock Insuficiente", e.getMessage())
                 );
             } catch (ValidationException e) {
-                Platform.runLater(() -> 
-                    AlertUtils.mostrarAdvertencia("Validación", e.getMessage())
+                Platform.runLater(() ->
+                        AlertUtils.mostrarAdvertencia("Validación", e.getMessage())
                 );
             } catch (BusinessException | DataAccessException e) {
                 logger.error("Error guardando factura", e);
-                Platform.runLater(() -> 
-                    AlertUtils.mostrarError("Error", "No se pudo guardar la factura", e.getMessage())
+                Platform.runLater(() ->
+                        AlertUtils.mostrarError("Error", "No se pudo guardar la factura", e.getMessage())
                 );
             } catch (NotFoundException e) {
-                throw new RuntimeException(e);
+                logger.error("Error: no encontrado", e);
+                Platform.runLater(() ->
+                        AlertUtils.mostrarError("Error", e.getMessage())
+                );
             }
         });
     }
@@ -302,8 +324,8 @@ public class FacturaController {
     private void generarPDFActual() {
         Cliente cliente = cbClientes.getValue();
         if (cliente == null || items.isEmpty()) {
-            AlertUtils.mostrarAdvertencia("Datos incompletos", 
-                "Complete los datos de la factura antes de generar el PDF");
+            AlertUtils.mostrarAdvertencia("Datos incompletos",
+                    "Complete los datos de la factura antes de generar el PDF");
             return;
         }
 
@@ -313,13 +335,13 @@ public class FacturaController {
         facturaTemp.setFecha(dpFecha.getValue());
         facturaTemp.setTipo(Factura.TipoFactura.valueOf(cbTipoFactura.getValue()));
         facturaTemp.setNotas(txtNotas.getText());
-        
+
         double descuento = 0.0;
         if (!txtDescuento.getText().trim().isEmpty()) {
             descuento = Double.parseDouble(txtDescuento.getText().trim());
         }
         facturaTemp.setDescuento(descuento);
-        
+
         for (DetalleFactura item : items) {
             facturaTemp.agregarDetalle(item);
         }
@@ -332,13 +354,13 @@ public class FacturaController {
             try {
                 String rutaPdf = pdfService.generarFacturaPDF(factura);
                 Platform.runLater(() -> {
-                    AlertUtils.mostrarExito("PDF Generado", 
-                        "El PDF se generó correctamente en:\n" + rutaPdf);
+                    AlertUtils.mostrarExito("PDF Generado",
+                            "El PDF se generó correctamente en:\n" + rutaPdf);
                 });
             } catch (Exception e) {
                 logger.error("Error generando PDF", e);
-                Platform.runLater(() -> 
-                    AlertUtils.mostrarError("Error", "No se pudo generar el PDF", e.getMessage())
+                Platform.runLater(() ->
+                        AlertUtils.mostrarError("Error", "No se pudo generar el PDF", e.getMessage())
                 );
             }
         });
@@ -360,7 +382,7 @@ public class FacturaController {
     private void actualizarTotales() {
         double subtotal = items.stream().mapToDouble(DetalleFactura::getSubtotal).sum();
         double descuento = 0.0;
-        
+
         try {
             if (!txtDescuento.getText().trim().isEmpty()) {
                 descuento = Double.parseDouble(txtDescuento.getText().trim());

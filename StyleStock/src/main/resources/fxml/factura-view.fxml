@@ -3,10 +3,10 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.geometry.Insets?>
 
-<VBox spacing="10" xmlns:fx="http://javafx.com/fxml"
+<VBox spacing="10" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="com.style.stock.controller.FacturaController">
     <padding>
-        <Insets top="15" right="15" bottom="15" left="15" />
+        <Insets top="15" right="15" bottom="15" left="15"/>
     </padding>
 
     <!-- Título -->
@@ -19,24 +19,22 @@
     <Separator/>
 
     <!-- Datos de la factura -->
-    <GridPane hgap="10" vgap="10">
-        <Label text="Cliente:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
-        <ComboBox fx:id="cbClientes" promptText="Seleccione un cliente" prefWidth="300"
-                  GridPane.columnIndex="1" GridPane.rowIndex="0" GridPane.columnSpan="2"/>
+    <VBox spacing="10">
+        <HBox spacing="10" alignment="CENTER_LEFT">
+            <Label text="Cliente:"/>
+            <ComboBox fx:id="cbClientes" promptText="Seleccione un cliente" prefWidth="300"/>
+            <Label text="Tipo:"/>
+            <ComboBox fx:id="cbTipoFactura" prefWidth="80"/>
+            <Label text="Fecha:"/>
+            <DatePicker fx:id="dpFecha" prefWidth="130"/>
+        </HBox>
 
-        <Label text="Tipo:" GridPane.columnIndex="3" GridPane.rowIndex="0"/>
-        <ComboBox fx:id="cbTipoFactura" prefWidth="80"
-                  GridPane.columnIndex="4" GridPane.rowIndex="0"/>
-
-        <Label text="Fecha:" GridPane.columnIndex="5" GridPane.rowIndex="0"/>
-        <DatePicker fx:id="dpFecha" prefWidth="130"
-                    GridPane.columnIndex="6" GridPane.rowIndex="0"/>
-
-        <Label text="Notas:" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
-        <TextArea fx:id="txtNotas" promptText="Notas adicionales (opcional)" 
-                  prefHeight="60" prefWidth="300"
-                  GridPane.columnIndex="1" GridPane.rowIndex="1" GridPane.columnSpan="6"/>
-    </GridPane>
+        <HBox spacing="10" alignment="CENTER_LEFT">
+            <Label text="Notas:"/>
+            <TextArea fx:id="txtNotas" promptText="Notas adicionales (opcional)"
+                      prefHeight="60" prefWidth="500"/>
+        </HBox>
+    </VBox>
 
     <Separator/>
 
@@ -45,10 +43,8 @@
     <HBox spacing="10" alignment="CENTER_LEFT">
         <Label text="Producto:"/>
         <ComboBox fx:id="cbProductos" promptText="Seleccione producto" prefWidth="300"/>
-        
         <Label text="Cantidad:"/>
         <TextField fx:id="txtCantidad" promptText="1" prefWidth="80"/>
-        
         <Button fx:id="btnAgregar" text="Agregar" onAction="#agregarItem" styleClass="button"/>
         <Button fx:id="btnEliminarItem" text="Quitar Seleccionado" onAction="#eliminarItem" styleClass="button"/>
     </HBox>
@@ -66,34 +62,39 @@
 
     <Separator/>
 
-    <!-- Totales -->
-    <GridPane hgap="15" vgap="8">
-        <Label text="Descuento:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
-        <TextField fx:id="txtDescuento" text="0" prefWidth="100"
-                   GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+    <!-- Totales - USANDO REGIÓN PARA ESPACIADO -->
+    <VBox spacing="8" alignment="CENTER_RIGHT" style="-fx-padding: 0 50 0 0;">
+        <HBox spacing="10" alignment="CENTER_RIGHT">
+            <Label text="Descuento:"/>
+            <TextField fx:id="txtDescuento" text="0" prefWidth="100"/>
+        </HBox>
 
-        <Label text="Subtotal:" style="-fx-font-weight: bold;" 
-               GridPane.columnIndex="3" GridPane.rowIndex="0"/>
-        <Label fx:id="lblSubtotal" text="$0.00" style="-fx-font-weight: bold;" GridPane.columnIndex="4" GridPane.rowIndex="0"/>
+        <HBox spacing="40" alignment="CENTER_RIGHT">
+            <Label text="Subtotal:" style="-fx-font-weight: bold;"/>
+            <Label fx:id="lblSubtotal" text="0.00" style="-fx-font-weight: bold;" minWidth="100"/>
+        </HBox>
 
-        <Label text="Descuento:" style="-fx-font-weight: bold;" 
-               GridPane.columnIndex="3" GridPane.rowIndex="1"/>
-        <Label fx:id="lblDescuento" text="$0.00" style="-fx-font-weight: bold;"
-               GridPane.columnIndex="4" GridPane.rowIndex="1"/>
+        <HBox spacing="40" alignment="CENTER_RIGHT">
+            <Label text="Descuento:" style="-fx-font-weight: bold;"/>
+            <Label fx:id="lblDescuento" text="0.00" style="-fx-font-weight: bold;" minWidth="100"/>
+        </HBox>
 
-        <Label text="TOTAL:" style="-fx-font-size: 16px; -fx-font-weight: bold;" 
-               GridPane.columnIndex="3" GridPane.rowIndex="2"/>
-        <Label fx:id="lblTotal" text="$0.00" 
-               style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #2E7D32;"
-               GridPane.columnIndex="4" GridPane.rowIndex="2"/>
-    </GridPane>
+        <HBox spacing="40" alignment="CENTER_RIGHT">
+            <Label text="TOTAL:" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
+            <Label fx:id="lblTotal" text="0.00"
+                   style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #2E7D32;"
+                   minWidth="100"/>
+        </HBox>
+    </VBox>
+
+    <Separator/>
 
     <!-- Botones finales -->
     <HBox alignment="CENTER_RIGHT" spacing="10">
         <ProgressIndicator fx:id="progressIndicator" visible="false" prefWidth="30" prefHeight="30"/>
         <Pane HBox.hgrow="ALWAYS"/>
         <Button fx:id="btnPDF" text="Generar PDF" onAction="#generarPDFActual" styleClass="button"/>
-        <Button fx:id="btnGuardar" text="Guardar Factura" onAction="#guardarFactura" 
+        <Button fx:id="btnGuardar" text="Guardar Factura" onAction="#guardarFactura"
                 styleClass="button" style="-fx-background-color: #2E7D32; -fx-text-fill: white;"/>
     </HBox>
 </VBox>
