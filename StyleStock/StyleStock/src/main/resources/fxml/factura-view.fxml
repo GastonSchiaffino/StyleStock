@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox spacing="10" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.style.stock.controller.FacturaController">
+    <padding>
+        <Insets top="15" right="15" bottom="15" left="15" />
+    </padding>
+
+    <!-- Título -->
+    <HBox alignment="CENTER_LEFT" spacing="10">
+        <Label text="NUEVA FACTURA" style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
+        <Pane HBox.hgrow="ALWAYS"/>
+        <Button fx:id="btnNuevo" text="Nueva Factura" onAction="#nuevaFactura" styleClass="button"/>
+    </HBox>
+
+    <Separator/>
+
+    <!-- Datos de la factura -->
+    <GridPane hgap="10" vgap="10">
+        <Label text="Cliente:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+        <ComboBox fx:id="cbClientes" promptText="Seleccione un cliente" prefWidth="300"
+                  GridPane.columnIndex="1" GridPane.rowIndex="0" GridPane.columnSpan="2"/>
+
+        <Label text="Tipo:" GridPane.columnIndex="3" GridPane.rowIndex="0"/>
+        <ComboBox fx:id="cbTipoFactura" prefWidth="80"
+                  GridPane.columnIndex="4" GridPane.rowIndex="0"/>
+
+        <Label text="Fecha:" GridPane.columnIndex="5" GridPane.rowIndex="0"/>
+        <DatePicker fx:id="dpFecha" prefWidth="130"
+                    GridPane.columnIndex="6" GridPane.rowIndex="0"/>
+
+        <Label text="Notas:" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+        <TextArea fx:id="txtNotas" promptText="Notas adicionales (opcional)" 
+                  prefHeight="60" prefWidth="300"
+                  GridPane.columnIndex="1" GridPane.rowIndex="1" GridPane.columnSpan="6"/>
+    </GridPane>
+
+    <Separator/>
+
+    <!-- Agregar productos -->
+    <Label text="Agregar Productos" style="-fx-font-weight: bold;"/>
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <Label text="Producto:"/>
+        <ComboBox fx:id="cbProductos" promptText="Seleccione producto" prefWidth="300"/>
+        
+        <Label text="Cantidad:"/>
+        <TextField fx:id="txtCantidad" promptText="1" prefWidth="80"/>
+        
+        <Button fx:id="btnAgregar" text="Agregar" onAction="#agregarItem" styleClass="button"/>
+        <Button fx:id="btnEliminarItem" text="Quitar Seleccionado" onAction="#eliminarItem" styleClass="button"/>
+    </HBox>
+
+    <!-- Tabla de items -->
+    <TableView fx:id="tablaItems" VBox.vgrow="ALWAYS" prefHeight="250">
+        <columns>
+            <TableColumn fx:id="colCodigo" text="Código" prefWidth="120"/>
+            <TableColumn fx:id="colDescripcion" text="Descripción" prefWidth="300"/>
+            <TableColumn fx:id="colPrecio" text="Precio Unit." prefWidth="100"/>
+            <TableColumn fx:id="colCantidad" text="Cantidad" prefWidth="80"/>
+            <TableColumn fx:id="colSubtotal" text="Subtotal" prefWidth="100"/>
+        </columns>
+    </TableView>
+
+    <Separator/>
+
+    <!-- Totales -->
+    <GridPane hgap="15" vgap="8">
+        <Label text="Descuento:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+        <TextField fx:id="txtDescuento" text="0" prefWidth="100"
+                   GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+
+        <Label text="Subtotal:" style="-fx-font-weight: bold;" 
+               GridPane.columnIndex="3" GridPane.rowIndex="0"/>
+        <Label fx:id="lblSubtotal" text="$0.00" style="-fx-font-weight: bold;" GridPane.columnIndex="4" GridPane.rowIndex="0"/>
+
+        <Label text="Descuento:" style="-fx-font-weight: bold;" 
+               GridPane.columnIndex="3" GridPane.rowIndex="1"/>
+        <Label fx:id="lblDescuento" text="$0.00" style="-fx-font-weight: bold;"
+               GridPane.columnIndex="4" GridPane.rowIndex="1"/>
+
+        <Label text="TOTAL:" style="-fx-font-size: 16px; -fx-font-weight: bold;" 
+               GridPane.columnIndex="3" GridPane.rowIndex="2"/>
+        <Label fx:id="lblTotal" text="$0.00" 
+               style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #2E7D32;"
+               GridPane.columnIndex="4" GridPane.rowIndex="2"/>
+    </GridPane>
+
+    <!-- Botones finales -->
+    <HBox alignment="CENTER_RIGHT" spacing="10">
+        <ProgressIndicator fx:id="progressIndicator" visible="false" prefWidth="30" prefHeight="30"/>
+        <Pane HBox.hgrow="ALWAYS"/>
+        <Button fx:id="btnPDF" text="Generar PDF" onAction="#generarPDFActual" styleClass="button"/>
+        <Button fx:id="btnGuardar" text="Guardar Factura" onAction="#guardarFactura" 
+                styleClass="button" style="-fx-background-color: #2E7D32; -fx-text-fill: white;"/>
+    </HBox>
+</VBox>
