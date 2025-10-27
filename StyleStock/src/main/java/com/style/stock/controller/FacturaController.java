@@ -1,228 +1,402 @@
 package com.style.stock.controller;
 
-import com.style.stock.model.Database;
-import com.style.stock.model.Producto;
-import com.style.stock.model.Cliente;
+import com.style.stock.exception.*;
+import com.style.stock.model.*;
+import com.style.stock.service.*;
+import com.style.stock.util.AlertUtils;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
-import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.pdmodel.PDPage;
-import org.apache.pdfbox.pdmodel.PDPageContentStream;
-import org.apache.pdfbox.pdmodel.common.PDRectangle;
-import org.apache.pdfbox.pdmodel.font.PDType1Font;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.sql.*;
 import java.time.LocalDate;
+import java.util.Optional;
 
+/**
+ * Controlador mejorado para gestión de facturas
+ */
 public class FacturaController {
+    private static final Logger logger = LoggerFactory.getLogger(FacturaController.class);
+
     @FXML private ComboBox<Cliente> cbClientes;
     @FXML private ComboBox<Producto> cbProductos;
     @FXML private TextField txtCantidad;
-    @FXML private TableView<FacturaItem> tablaItems;
-    @FXML private Label lblTotal;
-    @FXML private Button btnAgregar, btnGuardar, btnPDF;
-    @FXML private TableColumn<FacturaItem, String> colCodigo;
-    @FXML private TableColumn<FacturaItem, String> colDescripcion;
-    @FXML private TableColumn<FacturaItem, Double> colPrecio;
-    @FXML private TableColumn<FacturaItem, Integer> colCantidad;
-    @FXML private TableColumn<FacturaItem, Double> colSubtotal;
+    @FXML private TextField txtDescuento;
+    @FXML private DatePicker dpFecha;
+    @FXML private ComboBox<String> cbTipoFactura;
+    @FXML private TextArea txtNotas;
 
-    private ObservableList<Producto> productos = FXCollections.observableArrayList();
-    private ObservableList<Cliente> clientes = FXCollections.observableArrayList();
-    private ObservableList<FacturaItem> items = FXCollections.observableArrayList();
+    @FXML private TableView<DetalleFactura> tablaItems;
+    @FXML private TableColumn<DetalleFactura, String> colCodigo;
+    @FXML private TableColumn<DetalleFactura, String> colDescripcion;
+    @FXML private TableColumn<DetalleFactura, Double> colPrecio;
+    @FXML private TableColumn<DetalleFactura, Integer> colCantidad;
+    @FXML private TableColumn<DetalleFactura, Double> colSubtotal;
+
+    @FXML private Label lblSubtotal;
+    @FXML private Label lblDescuento;
+    @FXML private Label lblTotal;
+
+    @FXML private Button btnAgregar;
+    @FXML private Button btnEliminarItem;
+    @FXML private Button btnGuardar;
+    @FXML private Button btnPDF;
+    @FXML private Button btnNuevo;
+
+    @FXML private ProgressIndicator progressIndicator;
+
+    private final ProductoService productoService;
+    private final ClienteService clienteService;
+    private final FacturaService facturaService;
+    private final PDFService pdfService;
+
+    private final ObservableList<Producto> productos;
+    private final ObservableList<Cliente> clientes;
+    private final ObservableList<DetalleFactura> items;
+
+    private Factura facturaActual;
+
+    public FacturaController() {
+        this.productoService = new ProductoService();
+        this.clienteService = new ClienteService();
+        this.facturaService = new FacturaService();
+        this.pdfService = new PDFService();
+        
+        this.productos = FXCollections.observableArrayList();
+        this.clientes = FXCollections.observableArrayList();
+        this.items = FXCollections.observableArrayList();
+    }
 
     @FXML
     public void initialize() {
-        colCodigo.setCellValueFactory(new PropertyValueFactory<>("codigo"));
-        colDescripcion.setCellValueFactory(new PropertyValueFactory<>("descripcion"));
+        configurarTabla();
+        configurarCombos();
+        configurarEventos();
+        cargarDatos();
+        nuevaFactura();
+    }
+
+    private void configurarTabla() {
+        colCodigo.setCellValueFactory(cellData -> 
+            new javafx.beans.property.SimpleStringProperty(cellData.getValue().getProducto().getCodigo()));
+        colDescripcion.setCellValueFactory(cellData ->
+            new javafx.beans.property.SimpleStringProperty(cellData.getValue().getProducto().getDescripcion()));
         colPrecio.setCellValueFactory(new PropertyValueFactory<>("precioUnitario"));
         colCantidad.setCellValueFactory(new PropertyValueFactory<>("cantidad"));
         colSubtotal.setCellValueFactory(new PropertyValueFactory<>("subtotal"));
 
+        // Formatear precio y subtotal
+        colPrecio.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(Double precio, boolean empty) {
+                super.updateItem(precio, empty);
+                setText(empty || precio == null ? null : String.format("$%.2f", precio));
+            }
+        });
+
+        colSubtotal.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(Double subtotal, boolean empty) {
+                super.updateItem(subtotal, empty);
+                setText(empty || subtotal == null ? null : String.format("$%.2f", subtotal));
+            }
+        });
+
+        tablaItems.setItems(items);
+    }
+
+    private void configurarCombos() {
         cbClientes.setItems(clientes);
         cbProductos.setItems(productos);
-        tablaItems.setItems(items);
-        cargarProductos();
-        cargarClientes();
-        updateTotal();
+        
+        cbTipoFactura.setItems(FXCollections.observableArrayList("A", "B", "C"));
+        cbTipoFactura.setValue("A");
+
+        dpFecha.setValue(LocalDate.now());
     }
 
-    void cargarProductos() {
-        productos.clear();
-        try (Connection conn = Database.connect();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT * FROM productos")) {
-            while (rs.next()) {
-                productos.add(new Producto(
-                        rs.getInt("id"),
-                        rs.getString("codigo"),
-                        rs.getString("descripcion"),
-                        rs.getDouble("precio"),
-                        rs.getInt("stock")
-                ));
+    private void configurarEventos() {
+        // Validación de cantidad
+        txtCantidad.textProperty().addListener((obs, oldVal, newVal) -> {
+            if (!newVal.matches("\\d*")) {
+                txtCantidad.setText(oldVal);
             }
-        } catch (SQLException e) { e.printStackTrace(); }
+        });
+
+        // Validación de descuento
+        txtDescuento.textProperty().addListener((obs, oldVal, newVal) -> {
+            if (!newVal.matches("\\d*\\.?\\d*")) {
+                txtDescuento.setText(oldVal);
+            }
+        });
+
+        // Actualizar precio al seleccionar producto
+        cbProductos.valueProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null) {
+                txtCantidad.setText("1");
+            }
+        });
+
+        // Listener para actualizar totales cuando cambian items
+        items.addListener((javafx.collections.ListChangeListener<DetalleFactura>) c -> {
+            actualizarTotales();
+        });
     }
 
-    void cargarClientes() {
-        clientes.clear();
-        try (Connection conn = Database.connect();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT * FROM clientes")) {
-            while (rs.next()) {
-                clientes.add(new Cliente(
-                        rs.getInt("id"),
-                        rs.getString("nombre"),
-                        rs.getString("direccion"),
-                        rs.getString("telefono"),
-                        rs.getString("cuit")
-                ));
+    private void cargarDatos() {
+        ejecutarEnBackground(() -> {
+            try {
+                var listaProductos = productoService.listarTodos();
+                var listaClientes = clienteService.listarTodos();
+
+                Platform.runLater(() -> {
+                    productos.setAll(listaProductos);
+                    clientes.setAll(listaClientes);
+                });
+
+            } catch (DataAccessException e) {
+                logger.error("Error cargando datos", e);
+                Platform.runLater(() -> 
+                    AlertUtils.mostrarError("Error", "No se pudieron cargar los datos")
+                );
             }
-        } catch (SQLException e) { e.printStackTrace(); }
+        });
     }
 
     @FXML
-    public void agregarItem() {
-        Producto p = cbProductos.getSelectionModel().getSelectedItem();
-        if (p == null) { new Alert(Alert.AlertType.WARNING, "Seleccione una producto").showAndWait(); return; }
-        int qty = 1;
-        try { qty = Integer.parseInt(txtCantidad.getText().trim()); } catch (Exception e) {}
-        if (qty <= 0) { new Alert(Alert.AlertType.WARNING, "Cantidad inválida").showAndWait(); return; }
-        items.add(new FacturaItem(p.getId(), p.getCodigo(), p.getDescripcion(), p.getPrecio(), qty));
-        updateTotal();
-    }
-
-    @FXML
-    public void guardarFactura() {
-        Cliente c = cbClientes.getSelectionModel().getSelectedItem();
-        if (c == null) { new Alert(Alert.AlertType.WARNING, "Seleccione un cliente").showAndWait(); return; }
-        if (items.isEmpty()) { new Alert(Alert.AlertType.WARNING, "Agregue items").showAndWait(); return; }
-        double total = items.stream().mapToDouble(FacturaItem::getSubtotal).sum();
-        String fecha = LocalDate.now().toString();
-        try (Connection conn = Database.connect()) {
-            conn.setAutoCommit(false);
-            String sql = "INSERT INTO facturas (cliente_id, fecha, total, tipo) VALUES (?, ?, ?, ?)";
-            PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-            ps.setInt(1, c.getId());
-            ps.setString(2, fecha);
-            ps.setDouble(3, total);
-            ps.setString(4, "A");
-            ps.executeUpdate();
-            ResultSet keys = ps.getGeneratedKeys();
-            int facturaId = -1;
-            if (keys.next()) facturaId = keys.getInt(1);
-
-            String sqlDet = "INSERT INTO detalle_factura (factura_id, producto_id, cantidad, precio_unitario, subtotal) VALUES (?, ?, ?, ?, ?)";
-            PreparedStatement psd = conn.prepareStatement(sqlDet);
-            for (FacturaItem it : items) {
-                psd.setInt(1, facturaId);
-                psd.setInt(2, it.getProductoId());
-                psd.setInt(3, it.getCantidad());
-                psd.setDouble(4, it.getPrecioUnitario());
-                psd.setDouble(5, it.getSubtotal());
-                psd.addBatch();
-
-                // update stock
-                String upd = "UPDATE productos SET stock = stock - ? WHERE id = ?";
-                PreparedStatement pu = conn.prepareStatement(upd);
-                pu.setInt(1, it.getCantidad());
-                pu.setInt(2, it.getProductoId());
-                pu.executeUpdate();
-            }
-            psd.executeBatch();
-            conn.commit();
-            cargarProductos();
-            cbProductos.setItems(productos);
-            // clear
-            items.clear();
-            updateTotal();
-            new Alert(Alert.AlertType.INFORMATION, "Factura guardada. ID: " + facturaId).showAndWait();
-        } catch (SQLException ex) {
-            ex.printStackTrace();
-            new Alert(Alert.AlertType.ERROR, "Error guardando factura: " + ex.getMessage()).showAndWait();
+    private void agregarItem() {
+        Producto producto = cbProductos.getValue();
+        if (producto == null) {
+            AlertUtils.mostrarAdvertencia("Producto requerido", "Seleccione un producto");
+            return;
         }
-    }
-
-    @FXML
-    public void generarPDF() {
-        // generate PDF of current items (doesn't require saving first)
-        Cliente c = cbClientes.getSelectionModel().getSelectedItem();
-        if (c == null) { new Alert(Alert.AlertType.WARNING, "Seleccione un cliente").showAndWait(); return; }
-        if (items.isEmpty()) { new Alert(Alert.AlertType.WARNING, "Agregue items").showAndWait(); return; }
 
         try {
-            Path dir = Path.of(System.getProperty("user.home"), "style-stock", "facturas");
-            if (!Files.exists(dir)) Files.createDirectories(dir);
-            int seq = (int)(System.currentTimeMillis()/1000);
-            Path file = dir.resolve("factura_" + seq + ".pdf");
-
-            try (PDDocument doc = new PDDocument()) {
-                PDPage page = new PDPage(PDRectangle.LETTER);
-                doc.addPage(page);
-                try (PDPageContentStream cs = new PDPageContentStream(doc, page)) {
-                    cs.beginText();
-                    cs.setFont(PDType1Font.HELVETICA_BOLD, 14);
-                    cs.newLineAtOffset(50, 720);
-                    cs.showText("Style Stock - FACTURA");
-                    cs.newLineAtOffset(0, -20);
-                    cs.setFont(PDType1Font.HELVETICA, 10);
-                    cs.showText("Cliente: " + c.getNombre());
-                    cs.newLineAtOffset(0, -15);
-                    cs.showText("Fecha: " + java.time.LocalDate.now().toString());
-                    cs.newLineAtOffset(0, -20);
-                    cs.showText("--------------------------------------------");
-                    cs.newLineAtOffset(0, -15);
-                    for (FacturaItem it : items) {
-                        cs.showText(it.getCantidad() + " x " + it.getDescripcion() + " @ " + it.getPrecioUnitario() + " = " + it.getSubtotal());
-                        cs.newLineAtOffset(0, -12);
-                    }
-                    cs.newLineAtOffset(0, -10);
-                    cs.showText("--------------------------------------------");
-                    cs.newLineAtOffset(0, -15);
-                    cs.setFont(PDType1Font.HELVETICA_BOLD, 12);
-                    cs.showText("TOTAL: " + items.stream().mapToDouble(FacturaItem::getSubtotal).sum());
-                    cs.endText();
-                }
-                doc.save(file.toFile());
+            int cantidad = Integer.parseInt(txtCantidad.getText().trim());
+            if (cantidad <= 0) {
+                AlertUtils.mostrarAdvertencia("Cantidad inválida", "La cantidad debe ser mayor a 0");
+                return;
             }
-            new Alert(Alert.AlertType.INFORMATION, "PDF generado en: " + file.toString()).showAndWait();
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            new Alert(Alert.AlertType.ERROR, "Error generando PDF: " + ex.getMessage()).showAndWait();
+
+            // Verificar stock
+            if (producto.getStock() < cantidad) {
+                AlertUtils.mostrarAdvertencia("Stock insuficiente", 
+                    String.format("Stock disponible: %d unidades", producto.getStock()));
+                return;
+            }
+
+            // Crear detalle
+            DetalleFactura detalle = new DetalleFactura(producto, cantidad, producto.getPrecio());
+            items.add(detalle);
+
+            // Limpiar selección
+            cbProductos.setValue(null);
+            txtCantidad.clear();
+
+            logger.debug("Item agregado: {} x {}", producto.getDescripcion(), cantidad);
+
+        } catch (NumberFormatException e) {
+            AlertUtils.mostrarAdvertencia("Cantidad inválida", "Ingrese una cantidad válida");
         }
     }
 
-    private void updateTotal() {
-        double total = items.stream().mapToDouble(FacturaItem::getSubtotal).sum();
-        lblTotal.setText(String.format("%.2f", total));
-    }
-
-    // Inner class for table items
-    public static class FacturaItem {
-        private int productoId;
-        private String codigo;
-        private String descripcion;
-        private double precioUnitario;
-        private int cantidad;
-
-        public FacturaItem(int productoId, String codigo, String descripcion, double precioUnitario, int cantidad) {
-            this.productoId = productoId;
-            this.codigo = codigo;
-            this.descripcion = descripcion;
-            this.precioUnitario = precioUnitario;
-            this.cantidad = cantidad;
+    @FXML
+    private void eliminarItem() {
+        DetalleFactura seleccionado = tablaItems.getSelectionModel().getSelectedItem();
+        if (seleccionado == null) {
+            AlertUtils.mostrarAdvertencia("Selección requerida", "Seleccione un ítem para eliminar");
+            return;
         }
 
-        public int getProductoId() { return productoId; }
-        public String getCodigo() { return codigo; }
-        public String getDescripcion() { return descripcion; }
-        public double getPrecioUnitario() { return precioUnitario; }
-        public int getCantidad() { return cantidad; }
-        public double getSubtotal() { return precioUnitario * cantidad; }
+        items.remove(seleccionado);
+    }
+
+    @FXML
+    private void guardarFactura() {
+        Cliente cliente = cbClientes.getValue();
+        if (cliente == null) {
+            AlertUtils.mostrarAdvertencia("Cliente requerido", "Seleccione un cliente");
+            return;
+        }
+
+        if (items.isEmpty()) {
+            AlertUtils.mostrarAdvertencia("Items requeridos", "Agregue al menos un ítem a la factura");
+            return;
+        }
+
+        // Confirmar
+        Optional<ButtonType> confirmacion = AlertUtils.mostrarConfirmacion(
+            "Guardar Factura",
+            "¿Confirma que desea guardar esta factura?",
+            String.format("Total: $%.2f", calcularTotal())
+        );
+
+        if (confirmacion.isEmpty() || confirmacion.get() != ButtonType.OK) {
+            return;
+        }
+
+        ejecutarEnBackground(() -> {
+            try {
+                Factura factura = new Factura();
+                factura.setClienteId(cliente.getId());
+                factura.setFecha(dpFecha.getValue());
+                factura.setTipo(Factura.TipoFactura.valueOf(cbTipoFactura.getValue()));
+                factura.setNotas(txtNotas.getText());
+                
+                double descuento = 0.0;
+                if (!txtDescuento.getText().trim().isEmpty()) {
+                    descuento = Double.parseDouble(txtDescuento.getText().trim());
+                }
+                factura.setDescuento(descuento);
+
+                // Agregar detalles
+                for (DetalleFactura item : items) {
+                    factura.agregarDetalle(item);
+                }
+
+                Factura guardada = facturaService.crear(factura);
+
+                Platform.runLater(() -> {
+                    AlertUtils.mostrarExito("Éxito", 
+                        "Factura guardada correctamente\nNúmero: " + guardada.getNumeroFactura());
+                    
+                    // Preguntar si desea generar PDF
+                    Optional<ButtonType> generarPdf = AlertUtils.mostrarConfirmacion(
+                        "Generar PDF",
+                        "¿Desea generar el PDF de la factura?"
+                    );
+
+                    if (generarPdf.isPresent() && generarPdf.get() == ButtonType.OK) {
+                        generarPDF(guardada);
+                    }
+
+                    nuevaFactura();
+                    cargarDatos(); // Recargar para actualizar stock
+                });
+
+            } catch (InsufficientStockException e) {
+                logger.warn("Stock insuficiente", e);
+                Platform.runLater(() -> 
+                    AlertUtils.mostrarAdvertencia("Stock Insuficiente", e.getMessage())
+                );
+            } catch (ValidationException e) {
+                Platform.runLater(() -> 
+                    AlertUtils.mostrarAdvertencia("Validación", e.getMessage())
+                );
+            } catch (BusinessException | DataAccessException e) {
+                logger.error("Error guardando factura", e);
+                Platform.runLater(() -> 
+                    AlertUtils.mostrarError("Error", "No se pudo guardar la factura", e.getMessage())
+                );
+            } catch (NotFoundException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    @FXML
+    private void generarPDFActual() {
+        Cliente cliente = cbClientes.getValue();
+        if (cliente == null || items.isEmpty()) {
+            AlertUtils.mostrarAdvertencia("Datos incompletos", 
+                "Complete los datos de la factura antes de generar el PDF");
+            return;
+        }
+
+        // Crear factura temporal para preview
+        Factura facturaTemp = new Factura();
+        facturaTemp.setCliente(cliente);
+        facturaTemp.setFecha(dpFecha.getValue());
+        facturaTemp.setTipo(Factura.TipoFactura.valueOf(cbTipoFactura.getValue()));
+        facturaTemp.setNotas(txtNotas.getText());
+        
+        double descuento = 0.0;
+        if (!txtDescuento.getText().trim().isEmpty()) {
+            descuento = Double.parseDouble(txtDescuento.getText().trim());
+        }
+        facturaTemp.setDescuento(descuento);
+        
+        for (DetalleFactura item : items) {
+            facturaTemp.agregarDetalle(item);
+        }
+
+        generarPDF(facturaTemp);
+    }
+
+    private void generarPDF(Factura factura) {
+        ejecutarEnBackground(() -> {
+            try {
+                String rutaPdf = pdfService.generarFacturaPDF(factura);
+                Platform.runLater(() -> {
+                    AlertUtils.mostrarExito("PDF Generado", 
+                        "El PDF se generó correctamente en:\n" + rutaPdf);
+                });
+            } catch (Exception e) {
+                logger.error("Error generando PDF", e);
+                Platform.runLater(() -> 
+                    AlertUtils.mostrarError("Error", "No se pudo generar el PDF", e.getMessage())
+                );
+            }
+        });
+    }
+
+    @FXML
+    private void nuevaFactura() {
+        cbClientes.setValue(null);
+        cbProductos.setValue(null);
+        cbTipoFactura.setValue("A");
+        dpFecha.setValue(LocalDate.now());
+        txtCantidad.clear();
+        txtDescuento.clear();
+        txtNotas.clear();
+        items.clear();
+        actualizarTotales();
+    }
+
+    private void actualizarTotales() {
+        double subtotal = items.stream().mapToDouble(DetalleFactura::getSubtotal).sum();
+        double descuento = 0.0;
+        
+        try {
+            if (!txtDescuento.getText().trim().isEmpty()) {
+                descuento = Double.parseDouble(txtDescuento.getText().trim());
+            }
+        } catch (NumberFormatException e) {
+            // Ignorar
+        }
+
+        double total = subtotal - descuento;
+
+        lblSubtotal.setText(String.format("$%.2f", subtotal));
+        lblDescuento.setText(String.format("$%.2f", descuento));
+        lblTotal.setText(String.format("$%.2f", total));
+    }
+
+    private double calcularTotal() {
+        double subtotal = items.stream().mapToDouble(DetalleFactura::getSubtotal).sum();
+        double descuento = 0.0;
+        try {
+            if (!txtDescuento.getText().trim().isEmpty()) {
+                descuento = Double.parseDouble(txtDescuento.getText().trim());
+            }
+        } catch (NumberFormatException e) {
+            // Ignorar
+        }
+        return subtotal - descuento;
+    }
+
+    private void ejecutarEnBackground(Runnable tarea) {
+        progressIndicator.setVisible(true);
+        new Thread(() -> {
+            try {
+                tarea.run();
+            } finally {
+                Platform.runLater(() -> progressIndicator.setVisible(false));
+            }
+        }).start();
     }
 }

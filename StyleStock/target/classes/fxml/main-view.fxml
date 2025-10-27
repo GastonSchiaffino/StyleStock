@@ -1,45 +1,46 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.image.Image?>
 
-<BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="com.style.stock.controller.MainController">
+<BorderPane xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.style.stock.controller.MainController">
     <top>
-        <HBox styleClass="hbox">
-            <children>
-                <ImageView fitWidth="220"  preserveRatio="true">
-                    <image>
-                        <Image url="@../icons/StyleSR_Logo_Black.png" />
-                    </image>
-                </ImageView>
-            </children>
-            <Pane fx:id="spacer" HBox.hgrow="ALWAYS"/>
+        <HBox styleClass="hbox" alignment="CENTER_LEFT" spacing="15">
+            <ImageView fitWidth="220" preserveRatio="true">
+                <image>
+                    <Image url="@../icons/StyleSR_Logo_Black.png" />
+                </image>
+            </ImageView>
+            <Pane HBox.hgrow="ALWAYS"/>
+            <Label text="Tema:"/>
             <ChoiceBox fx:id="themeChoice" prefWidth="120" />
         </HBox>
     </top>
+    
     <left>
-        <VBox spacing="10" styleClass="vbox">
-            <Label text="MENÚ" style="-fx-text-fill: #CCCCCC; -fx-font-size: 12px;"/>
+        <VBox spacing="10" styleClass="vbox" prefWidth="220">
+            <Label text="MENÚ" style="-fx-text-fill: #CCCCCC; -fx-font-size: 12px; -fx-font-weight: bold;"/>
+            
             <TitledPane text="Productos" expanded="false" styleClass="menu-group">
                 <VBox spacing="5">
-                    <Button text="Reponer"  styleClass="submenu-button"/>
-                    <Button text="Consultar Stock Actual" onAction="#showProductos" styleClass="submenu-button"/>
-                    <Button text="Reconocer Faltante" styleClass="submenu-button"/>
+                    <Button text="Gestión de Productos" onAction="#showProductos" styleClass="submenu-button"/>
+                    <Button text="Stock Bajo" styleClass="submenu-button"/>
                 </VBox>
             </TitledPane>
+            
             <TitledPane text="Clientes" expanded="false" styleClass="menu-group">
                 <VBox spacing="5">
-                    <Button text="Nuevo Cliente" styleClass="submenu-button"/>
-                    <Button text="Listado" onAction="#showClientes" styleClass="submenu-button"/>
+                    <Button text="Gestión de Clientes" onAction="#showClientes" styleClass="submenu-button"/>
                 </VBox>
             </TitledPane>
 
             <Button text="Facturas" onAction="#showFacturas" styleClass="menu-button"/>
          </VBox>
- </left>
- <center>
-  <StackPane fx:id="mainContent" style="-fx-background-color: #F7F9FC; -fx-padding: 20;"/>
- </center>
- </BorderPane>
+    </left>
+    
+    <center>
+        <StackPane fx:id="mainContent" style="-fx-background-color: #F7F9FC; -fx-padding: 20;"/>
+    </center>
+</BorderPane>
