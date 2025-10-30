@@ -7,6 +7,7 @@ import java.util.Objects;
 
 /**
  * Modelo de Categoría de productos
+ * Define agrupaciones de productos y sus atributos asociados
  */
 public class Categoria {
     private Integer id;
@@ -24,13 +25,24 @@ public class Categoria {
         this.atributos = new ArrayList<>();
     }
 
+    public Categoria(String nombre) {
+        this();
+        this.nombre = nombre;
+    }
+
     public Categoria(String nombre, String descripcion) {
         this();
         this.nombre = nombre;
         this.descripcion = descripcion;
     }
 
-    // Validaciones
+    public Categoria(String nombre, String descripcion, Boolean requiereVariantes) {
+        this();
+        this.nombre = nombre;
+        this.descripcion = descripcion;
+        this.requiereVariantes = requiereVariantes;
+    }
+
     public void validate() throws IllegalArgumentException {
         if (nombre == null || nombre.trim().isEmpty()) {
             throw new IllegalArgumentException("El nombre de la categoría es obligatorio");
@@ -38,6 +50,38 @@ public class Categoria {
         if (nombre.length() > 100) {
             throw new IllegalArgumentException("El nombre no puede superar 100 caracteres");
         }
+    }
+
+    /**
+     * Agrega un atributo a la categoría
+     */
+    public void agregarAtributo(Atributo atributo) {
+        if (this.atributos == null) {
+            this.atributos = new ArrayList<>();
+        }
+        if (!this.atributos.contains(atributo)) {
+            this.atributos.add(atributo);
+        }
+    }
+
+    /**
+     * Elimina un atributo de la categoría
+     */
+    public void eliminarAtributo(Atributo atributo) {
+        if (this.atributos != null) {
+            this.atributos.remove(atributo);
+        }
+    }
+
+    /**
+     * Verifica si la categoría tiene un atributo específico
+     */
+    public boolean tieneAtributo(Integer atributoId) {
+        if (this.atributos == null) {
+            return false;
+        }
+        return this.atributos.stream()
+                .anyMatch(a -> a.getId().equals(atributoId));
     }
 
     // Getters y Setters
@@ -106,13 +150,20 @@ public class Categoria {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Cliente cliente = (Cliente) o;
-        return Objects.equals(id, cliente.id);
+    public String toString() {
+        return nombre;
     }
 
     @Override
-    public int hashCode() { return Objects.hash(id); }
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Categoria categoria = (Categoria) o;
+        return Objects.equals(id, categoria.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
 }

@@ -10,7 +10,7 @@ import java.util.Objects;
 // ============================================
 // METODO PAGO
 // ============================================
-class MetodoPago {
+public class MetodoPago {
     private Integer id;
     private String nombre;
     private Boolean requiereCuotas;

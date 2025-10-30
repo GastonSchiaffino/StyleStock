@@ -10,7 +10,7 @@ import java.util.Objects;
 // ============================================
 // VENTA
 // ============================================
-class Venta {
+public class Venta {
     private Integer id;
     private String numeroComprobante;
     private Integer clienteId;

@@ -17,7 +17,7 @@ import java.util.Optional;
 // ============================================
 // CLIENTE DAO
 // ============================================
-class ClienteDAO {
+public class ClienteDAO {
     private static final Logger logger = LoggerFactory.getLogger(ClienteDAO.class);
     private final DatabaseManager dbManager;
 

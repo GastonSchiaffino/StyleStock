@@ -10,7 +10,7 @@ import java.util.Objects;
 // ============================================
 // PAGO VENTA
 // ============================================
-class PagoVenta {
+public class PagoVenta {
     private Integer id;
     private Integer ventaId;
     private Integer metodoPagoId;

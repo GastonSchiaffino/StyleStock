@@ -1,58 +1,67 @@
+// ============================================
+// Producto.java - ACTUALIZADO
+// ============================================
 package com.style.stock.model;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
 
 /**
- * Modelo de Producto con validaciones
+ * Modelo de Producto actualizado para sincronizar con BD v2.0
  */
 public class Producto {
     private Integer id;
     private String codigo;
+    private String nombre;
     private String descripcion;
-    private Double precio;
-    private Integer stock;
-    private Integer stockMinimo;
-    private String categoria;
+    private Integer categoriaId;
+    private Categoria categoria;
+    private String marca;
+    private Double precioCosto;
+    private Double precioMinorista;
+    private Double precioMayorista;
+    private String imagenUrl;
     private Boolean activo;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
     public Producto() {
         this.activo = true;
-        this.stock = 0;
-        this.stockMinimo = 5;
+        this.precioCosto = 0.0;
+        this.precioMinorista = 0.0;
+        this.precioMayorista = 0.0;
     }
 
-    public Producto(String codigo, String descripcion, Double precio, Integer stock) {
+    public Producto(String codigo, String nombre, Double precioMinorista, Double precioMayorista) {
         this();
         this.codigo = codigo;
-        this.descripcion = descripcion;
-        this.precio = precio;
-        this.stock = stock;
+        this.nombre = nombre;
+        this.precioMinorista = precioMinorista;
+        this.precioMayorista = precioMayorista;
     }
 
-    // Validaciones
     public void validate() throws IllegalArgumentException {
         if (codigo == null || codigo.trim().isEmpty()) {
             throw new IllegalArgumentException("El código es obligatorio");
         }
-        if (descripcion == null || descripcion.trim().isEmpty()) {
-            throw new IllegalArgumentException("La descripción es obligatoria");
+        if (nombre == null || nombre.trim().isEmpty()) {
+            throw new IllegalArgumentException("El nombre es obligatorio");
         }
-        if (precio == null || precio < 0) {
-            throw new IllegalArgumentException("El precio debe ser mayor o igual a 0");
+        if (categoriaId == null) {
+            throw new IllegalArgumentException("La categoría es obligatoria");
         }
-        if (stock == null || stock < 0) {
-            throw new IllegalArgumentException("El stock no puede ser negativo");
+        if (precioMinorista == null || precioMinorista < 0) {
+            throw new IllegalArgumentException("El precio minorista debe ser mayor o igual a 0");
         }
-        if (stockMinimo != null && stockMinimo < 0) {
-            throw new IllegalArgumentException("El stock mínimo no puede ser negativo");
+        if (precioMayorista == null || precioMayorista < 0) {
+            throw new IllegalArgumentException("El precio mayorista debe ser mayor o igual a 0");
         }
-    }
-
-    public boolean isStockBajo() {
-        return stock < stockMinimo;
+        if (precioMayorista > precioMinorista) {
+            throw new IllegalArgumentException("El precio mayorista no puede ser mayor al minorista");
+        }
+        if (precioCosto != null && precioCosto < 0) {
+            throw new IllegalArgumentException("El precio de costo no puede ser negativo");
+        }
     }
 
     // Getters y Setters
@@ -62,20 +71,37 @@ public class Producto {
     public String getCodigo() { return codigo; }
     public void setCodigo(String codigo) { this.codigo = codigo; }
 
+    public String getNombre() { return nombre; }
+    public void setNombre(String nombre) { this.nombre = nombre; }
+
     public String getDescripcion() { return descripcion; }
     public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
 
-    public Double getPrecio() { return precio; }
-    public void setPrecio(Double precio) { this.precio = precio; }
+    public Integer getCategoriaId() { return categoriaId; }
+    public void setCategoriaId(Integer categoriaId) { this.categoriaId = categoriaId; }
 
-    public Integer getStock() { return stock; }
-    public void setStock(Integer stock) { this.stock = stock; }
+    public Categoria getCategoria() { return categoria; }
+    public void setCategoria(Categoria categoria) { 
+        this.categoria = categoria;
+        if (categoria != null) {
+            this.categoriaId = categoria.getId();
+        }
+    }
 
-    public Integer getStockMinimo() { return stockMinimo; }
-    public void setStockMinimo(Integer stockMinimo) { this.stockMinimo = stockMinimo; }
+    public String getMarca() { return marca; }
+    public void setMarca(String marca) { this.marca = marca; }
 
-    public String getCategoria() { return categoria; }
-    public void setCategoria(String categoria) { this.categoria = categoria; }
+    public Double getPrecioCosto() { return precioCosto; }
+    public void setPrecioCosto(Double precioCosto) { this.precioCosto = precioCosto; }
+
+    public Double getPrecioMinorista() { return precioMinorista; }
+    public void setPrecioMinorista(Double precioMinorista) { this.precioMinorista = precioMinorista; }
+
+    public Double getPrecioMayorista() { return precioMayorista; }
+    public void setPrecioMayorista(Double precioMayorista) { this.precioMayorista = precioMayorista; }
+
+    public String getImagenUrl() { return imagenUrl; }
+    public void setImagenUrl(String imagenUrl) { this.imagenUrl = imagenUrl; }
 
     public Boolean getActivo() { return activo; }
     public void setActivo(Boolean activo) { this.activo = activo; }
@@ -87,9 +113,7 @@ public class Producto {
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 
     @Override
-    public String toString() {
-        return descripcion != null ? descripcion : codigo;
-    }
+    public String toString() { return nombre != null ? nombre : codigo; }
 
     @Override
     public boolean equals(Object o) {
@@ -100,7 +124,5 @@ public class Producto {
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(id);
-    }
+    public int hashCode() { return Objects.hash(id); }
 }

@@ -15,7 +15,7 @@ import java.util.Optional;
 // ============================================
 // VARIANTE DAO
 // ============================================
-class VarianteDAO {
+public class VarianteDAO {
     private static final Logger logger = LoggerFactory.getLogger(VarianteDAO.class);
     private final DatabaseManager dbManager;
 

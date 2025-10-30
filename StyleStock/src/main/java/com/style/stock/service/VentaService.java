@@ -11,7 +11,7 @@ import java.util.List;
 // ============================================
 // VENTA SERVICE
 // ============================================
-class VentaService {
+public class VentaService {
     private static final Logger logger = LoggerFactory.getLogger(VentaService.class);
     private final VentaDAO ventaDAO;
     private final VarianteService varianteService;

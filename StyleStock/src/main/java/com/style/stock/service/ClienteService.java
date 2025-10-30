@@ -11,7 +11,7 @@ import java.util.List;
 // ============================================
 // CLIENTE SERVICE
 // ============================================
-class ClienteService {
+public class ClienteService {
     private static final Logger logger = LoggerFactory.getLogger(ClienteService.class);
     private final ClienteDAO clienteDAO;
 

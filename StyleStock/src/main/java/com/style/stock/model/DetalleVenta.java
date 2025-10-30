@@ -11,7 +11,7 @@ import java.util.Objects;
 // ============================================
 // DETALLE VENTA
 // ============================================
-class DetalleVenta {
+public class DetalleVenta {
     private Integer id;
     private Integer ventaId;
     private Integer varianteId;
