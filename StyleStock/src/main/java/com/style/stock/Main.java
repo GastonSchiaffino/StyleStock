@@ -1,3 +1,6 @@
+// ============================================
+// Main.java
+// ============================================
 package com.style.stock;
 
 import com.style.stock.database.DatabaseManager;
@@ -15,18 +18,14 @@ import org.slf4j.LoggerFactory;
 import java.io.InputStream;
 import java.time.LocalDate;
 
-/**
- * Clase principal mejorada con logging y manejo de errores
- */
 public class Main extends Application {
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
     @Override
     public void start(Stage stage) {
         try {
-            logger.info("=== Iniciando StyleStock ===");
+            logger.info("=== Iniciando StyleStock v2.0 ===");
             
-            // Verificar conexión a base de datos
             DatabaseManager dbManager = DatabaseManager.getInstance();
             if (!dbManager.isHealthy()) {
                 logger.error("La base de datos no está disponible");
@@ -35,27 +34,20 @@ public class Main extends Application {
             }
             logger.info("Base de datos inicializada correctamente");
 
-            // Realizar backup automático si está configurado
             realizarBackupAutomatico();
 
-            // Cargar interfaz principal
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/main-view.fxml"));
             Scene scene = new Scene(loader.load());
             
-            // Aplicar tema desde configuración
             aplicarTema(scene);
-            
-            // Configurar ícono de la aplicación
             configurarIcono(stage);
             
-            // Configurar ventana
-            stage.setTitle("StyleStock - Sistema de Gestión");
+            stage.setTitle("StyleStock v2.0 - Sistema de Gestión de Ventas");
             stage.setScene(scene);
             stage.setMaximized(true);
-            stage.setMinWidth(1024);
+            stage.setMinWidth(1280);
             stage.setMinHeight(768);
             
-            // Manejar cierre de aplicación
             stage.setOnCloseRequest(event -> {
                 logger.info("Cerrando aplicación...");
                 DatabaseManager.getInstance().shutdown();
@@ -99,15 +91,12 @@ public class Main extends Application {
     private void realizarBackupAutomatico() {
         try {
             boolean backupHabilitado = AppConfig.getBoolean("backup_auto", true);
-            if (!backupHabilitado) {
-                return;
-            }
+            if (!backupHabilitado) return;
 
             String ultimoBackupStr = AppConfig.get("ultimo_backup");
             int diasBackup = AppConfig.getInt("backup_dias", 7);
 
             if (ultimoBackupStr == null || ultimoBackupStr.isEmpty()) {
-                // Primer backup
                 realizarBackup();
             } else {
                 LocalDate ultimoBackup = LocalDate.parse(ultimoBackupStr);
@@ -153,7 +142,6 @@ public class Main extends Application {
     }
 
     public static void main(String[] args) {
-        // Configurar propiedades del sistema para JavaFX
         System.setProperty("prism.lcdtext", "false");
         System.setProperty("prism.text", "t2k");
         
@@ -161,4 +149,3 @@ public class Main extends Application {
         launch(args);
     }
 }
-

@@ -2,20 +2,22 @@ package com.style.stock.dao;
 
 import com.style.stock.database.DatabaseManager;
 import com.style.stock.exception.DataAccessException;
-import com.style.stock.model.Cliente;
+import com.style.stock.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.*;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * DAO para operaciones CRUD de Clientes
- */
-public class ClienteDAO {
+// ============================================
+// CLIENTE DAO
+// ============================================
+class ClienteDAO {
     private static final Logger logger = LoggerFactory.getLogger(ClienteDAO.class);
     private final DatabaseManager dbManager;
 
@@ -24,18 +26,21 @@ public class ClienteDAO {
     }
 
     public Cliente save(Cliente cliente) throws DataAccessException {
-        String sql = "INSERT INTO clientes (nombre, direccion, telefono, cuit, email, activo) " +
-                    "VALUES (?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO clientes (nombre, apellido, direccion, telefono, email, cuit, " +
+                    "tipo_cliente_id, notas, activo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = dbManager.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             ps.setString(1, cliente.getNombre());
-            ps.setString(2, cliente.getDireccion());
-            ps.setString(3, cliente.getTelefono());
-            ps.setString(4, cliente.getCuit());
+            ps.setString(2, cliente.getApellido());
+            ps.setString(3, cliente.getDireccion());
+            ps.setString(4, cliente.getTelefono());
             ps.setString(5, cliente.getEmail());
-            ps.setBoolean(6, cliente.getActivo());
+            ps.setString(6, cliente.getCuit());
+            ps.setInt(7, cliente.getTipoClienteId());
+            ps.setString(8, cliente.getNotas());
+            ps.setBoolean(9, cliente.getActivo());
 
             ps.executeUpdate();
 
@@ -45,7 +50,7 @@ public class ClienteDAO {
                 }
             }
 
-            logger.info("Cliente guardado: {}", cliente.getNombre());
+            logger.info("Cliente guardado: {}", cliente.getNombreCompleto());
             return cliente;
 
         } catch (SQLException e) {
@@ -55,26 +60,29 @@ public class ClienteDAO {
     }
 
     public Cliente update(Cliente cliente) throws DataAccessException {
-        String sql = "UPDATE clientes SET nombre = ?, direccion = ?, telefono = ?, " +
-                    "cuit = ?, email = ?, activo = ? WHERE id = ?";
+        String sql = "UPDATE clientes SET nombre = ?, apellido = ?, direccion = ?, telefono = ?, " +
+                    "email = ?, cuit = ?, tipo_cliente_id = ?, notas = ?, activo = ? WHERE id = ?";
 
         try (Connection conn = dbManager.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, cliente.getNombre());
-            ps.setString(2, cliente.getDireccion());
-            ps.setString(3, cliente.getTelefono());
-            ps.setString(4, cliente.getCuit());
+            ps.setString(2, cliente.getApellido());
+            ps.setString(3, cliente.getDireccion());
+            ps.setString(4, cliente.getTelefono());
             ps.setString(5, cliente.getEmail());
-            ps.setBoolean(6, cliente.getActivo());
-            ps.setInt(7, cliente.getId());
+            ps.setString(6, cliente.getCuit());
+            ps.setInt(7, cliente.getTipoClienteId());
+            ps.setString(8, cliente.getNotas());
+            ps.setBoolean(9, cliente.getActivo());
+            ps.setInt(10, cliente.getId());
 
             int affected = ps.executeUpdate();
             if (affected == 0) {
                 throw new DataAccessException("Cliente no encontrado con ID: " + cliente.getId());
             }
 
-            logger.info("Cliente actualizado: {}", cliente.getNombre());
+            logger.info("Cliente actualizado: {}", cliente.getNombreCompleto());
             return cliente;
 
         } catch (SQLException e) {
@@ -98,15 +106,15 @@ public class ClienteDAO {
             return Optional.empty();
 
         } catch (SQLException e) {
-            logger.error("Error buscando cliente por ID", e);
+            logger.error("Error buscando cliente", e);
             throw new DataAccessException("Error buscando cliente: " + e.getMessage(), e);
         }
     }
 
     public List<Cliente> findAll(boolean soloActivos) throws DataAccessException {
         String sql = soloActivos 
-            ? "SELECT * FROM clientes WHERE activo = 1 ORDER BY nombre"
-            : "SELECT * FROM clientes ORDER BY nombre";
+            ? "SELECT * FROM clientes WHERE activo = 1 ORDER BY nombre, apellido"
+            : "SELECT * FROM clientes ORDER BY nombre, apellido";
 
         List<Cliente> clientes = new ArrayList<>();
 
@@ -126,14 +134,18 @@ public class ClienteDAO {
         }
     }
 
-    public List<Cliente> findByNombre(String nombre) throws DataAccessException {
-        String sql = "SELECT * FROM clientes WHERE nombre LIKE ? AND activo = 1 ORDER BY nombre";
+    public List<Cliente> buscarPorNombre(String nombre) throws DataAccessException {
+        String sql = "SELECT * FROM clientes WHERE (nombre LIKE ? OR apellido LIKE ?) AND activo = 1 " +
+                    "ORDER BY nombre, apellido";
         List<Cliente> clientes = new ArrayList<>();
 
         try (Connection conn = dbManager.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            ps.setString(1, "%" + nombre + "%");
+            String patron = "%" + nombre + "%";
+            ps.setString(1, patron);
+            ps.setString(2, patron);
+            
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     clientes.add(mapResultSetToCliente(rs));
@@ -143,7 +155,7 @@ public class ClienteDAO {
             return clientes;
 
         } catch (SQLException e) {
-            logger.error("Error buscando clientes por nombre", e);
+            logger.error("Error buscando clientes", e);
             throw new DataAccessException("Error buscando clientes: " + e.getMessage(), e);
         }
     }
@@ -173,10 +185,13 @@ public class ClienteDAO {
         Cliente c = new Cliente();
         c.setId(rs.getInt("id"));
         c.setNombre(rs.getString("nombre"));
+        c.setApellido(rs.getString("apellido"));
         c.setDireccion(rs.getString("direccion"));
         c.setTelefono(rs.getString("telefono"));
-        c.setCuit(rs.getString("cuit"));
         c.setEmail(rs.getString("email"));
+        c.setCuit(rs.getString("cuit"));
+        c.setTipoClienteId(rs.getInt("tipo_cliente_id"));
+        c.setNotas(rs.getString("notas"));
         c.setActivo(rs.getBoolean("activo"));
         
         String createdAtStr = rs.getString("created_at");
@@ -192,4 +207,3 @@ public class ClienteDAO {
         return c;
     }
 }
-

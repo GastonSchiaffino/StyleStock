@@ -1,17 +1,17 @@
 package com.style.stock.service;
 
-import com.style.stock.dao.ClienteDAO;
+import com.style.stock.dao.*;
 import com.style.stock.exception.*;
-import com.style.stock.model.Cliente;
+import com.style.stock.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
-/**
- * Servicio de negocio para Clientes
- */
-public class ClienteService {
+// ============================================
+// CLIENTE SERVICE
+// ============================================
+class ClienteService {
     private static final Logger logger = LoggerFactory.getLogger(ClienteService.class);
     private final ClienteDAO clienteDAO;
 
@@ -21,14 +21,10 @@ public class ClienteService {
 
     public Cliente crear(Cliente cliente) throws ValidationException, DataAccessException {
         logger.debug("Creando cliente: {}", cliente.getNombre());
-
-        // Validar
         validar(cliente);
 
-        // Guardar
         Cliente guardado = clienteDAO.save(cliente);
-        logger.info("Cliente creado: {} - {}", guardado.getId(), guardado.getNombre());
-        
+        logger.info("Cliente creado: {} - {}", guardado.getId(), guardado.getNombreCompleto());
         return guardado;
     }
 
@@ -39,17 +35,13 @@ public class ClienteService {
             throw new ValidationException("id", "El ID del cliente es obligatorio");
         }
 
-        // Validar
         validar(cliente);
 
-        // Verificar que exista
         clienteDAO.findById(cliente.getId())
             .orElseThrow(() -> new NotFoundException("Cliente", cliente.getId()));
 
-        // Actualizar
         Cliente actualizado = clienteDAO.update(cliente);
         logger.info("Cliente actualizado: {}", actualizado.getId());
-        
         return actualizado;
     }
 
@@ -66,13 +58,11 @@ public class ClienteService {
         if (nombre == null || nombre.trim().isEmpty()) {
             return listarTodos();
         }
-        return clienteDAO.findByNombre(nombre);
+        return clienteDAO.buscarPorNombre(nombre);
     }
 
     public void eliminar(Integer id) throws DataAccessException, NotFoundException {
-        // Verificar que exista
         buscarPorId(id);
-
         clienteDAO.delete(id);
         logger.info("Cliente eliminado: {}", id);
     }
@@ -85,4 +75,3 @@ public class ClienteService {
         }
     }
 }
-
