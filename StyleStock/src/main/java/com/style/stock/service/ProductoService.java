@@ -6,6 +6,7 @@ import com.style.stock.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 
 // ============================================
@@ -68,6 +69,21 @@ public class ProductoService {
         return productoDAO.findByCategoria(categoriaId);
     }
 
+    public List<Producto> buscarPorNombre(String nombre) throws DataAccessException {
+        if (nombre == null || nombre.trim().isEmpty()) {
+            return listarTodos();
+        }
+        // Búsqueda por código o nombre
+        List<Producto> resultados = new ArrayList<>();
+        for (Producto p : listarTodos()) {
+            if (p.getCodigo().toLowerCase().contains(nombre.toLowerCase()) ||
+                    p.getNombre().toLowerCase().contains(nombre.toLowerCase())) {
+                resultados.add(p);
+            }
+        }
+        return resultados;
+    }
+
     public void eliminar(Integer id) throws BusinessException, DataAccessException, NotFoundException {
         buscarPorId(id);
         productoDAO.delete(id);
@@ -81,4 +97,5 @@ public class ProductoService {
             throw new ValidationException("producto", e.getMessage());
         }
     }
+
 }

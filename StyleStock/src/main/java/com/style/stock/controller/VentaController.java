@@ -249,6 +249,11 @@ public class VentaController {
         });
     }
 
+    /**
+     * Búsqueda de variantes por texto (SKU o descripción del producto)
+     * @param termino Término a buscar
+     * @return Lista de variantes coincidentes
+     */
     @FXML
     private void buscarVariantes(String termino) {
         ejecutarEnBackground(() -> {

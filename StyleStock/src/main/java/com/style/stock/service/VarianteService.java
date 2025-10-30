@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class VarianteService {
     private static final Logger logger = LoggerFactory.getLogger(VarianteService.class);
@@ -67,9 +68,9 @@ public class VarianteService {
             // Primero intentar búsqueda exacta por SKU
             if (busqueda.matches("[A-Za-z0-9-]+")) {
                 try {
-                    Variante porSku = varianteDAO.findBySku(busqueda);
-                    if (porSku != null) {
-                        resultados.add(porSku);
+                    Optional<Variante> porSku = varianteDAO.findBySku(busqueda);
+                    if (porSku.isPresent()) {
+                        resultados.add(porSku.get());
                         return resultados;
                     }
                 } catch (DataAccessException e) {

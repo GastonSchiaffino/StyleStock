@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Optional;
 
 /**
- * Controlador mejorado para gestión de productos
+ * Controlador para gestión de productos (actualizado para v2.0)
  */
 public class ProductoController {
     private static final Logger logger = LoggerFactory.getLogger(ProductoController.class);
@@ -31,9 +31,9 @@ public class ProductoController {
 
     @FXML private TextField txtCodigo;
     @FXML private TextField txtDescripcion;
-    @FXML private TextField txtPrecio;
-    @FXML private TextField txtStock;
-    @FXML private TextField txtStockMinimo;
+    @FXML private TextField txtPrecioMinorista;
+    @FXML private TextField txtPrecioMayorista;
+    @FXML private TextField txtMarca;
     @FXML private TextField txtCategoria;
     @FXML private TextField txtBuscar;
 
@@ -66,10 +66,18 @@ public class ProductoController {
     private void configurarTabla() {
         colId.setCellValueFactory(new PropertyValueFactory<>("id"));
         colCodigo.setCellValueFactory(new PropertyValueFactory<>("codigo"));
-        colDescripcion.setCellValueFactory(new PropertyValueFactory<>("descripcion"));
-        colPrecio.setCellValueFactory(new PropertyValueFactory<>("precio"));
-        colStock.setCellValueFactory(new PropertyValueFactory<>("stock"));
-        colStockMinimo.setCellValueFactory(new PropertyValueFactory<>("stockMinimo"));
+        colDescripcion.setCellValueFactory(new PropertyValueFactory<>("nombre"));
+        colPrecio.setCellValueFactory(new PropertyValueFactory<>("precioMinorista"));
+
+        // Stock y stock mínimo se muestran desde el modelo (puede ser 0 si no tiene variantes)
+        colStock.setCellValueFactory(cellData -> {
+            // En v2.0 el stock está en las variantes, mostrar 0 por defecto
+            return new javafx.beans.property.SimpleObjectProperty<>(0);
+        });
+
+        colStockMinimo.setCellValueFactory(cellData -> {
+            return new javafx.beans.property.SimpleObjectProperty<>(0);
+        });
 
         // Formatear columna de precio
         colPrecio.setCellFactory(col -> new TableCell<>() {
@@ -84,57 +92,31 @@ public class ProductoController {
             }
         });
 
-        // Resaltar stock bajo
-        colStock.setCellFactory(col -> new TableCell<>() {
-            @Override
-            protected void updateItem(Integer stock, boolean empty) {
-                super.updateItem(stock, empty);
-                if (empty || stock == null) {
-                    setText(null);
-                    setStyle("");
-                } else {
-                    setText(stock.toString());
-                    Producto producto = getTableView().getItems().get(getIndex());
-                    if (producto != null && producto.isStockBajo()) {
-                        setStyle("-fx-background-color: #ffcccc;");
-                    } else {
-                        setStyle("");
-                    }
-                }
-            }
-        });
-
         tablaProductos.setItems(productos);
     }
 
     private void configurarEventos() {
         // Selección en tabla
         tablaProductos.getSelectionModel().selectedItemProperty().addListener(
-            (obs, oldVal, newVal) -> {
-                productoSeleccionado = newVal;
-                actualizarEstadoBotones();
-            }
+                (obs, oldVal, newVal) -> {
+                    productoSeleccionado = newVal;
+                    actualizarEstadoBotones();
+                }
         );
 
         // Búsqueda en tiempo real
         txtBuscar.textProperty().addListener((obs, oldVal, newVal) -> buscarProductos());
 
         // Validación de números
-        txtPrecio.textProperty().addListener((obs, oldVal, newVal) -> {
+        txtPrecioMinorista.textProperty().addListener((obs, oldVal, newVal) -> {
             if (!newVal.matches("\\d*\\.?\\d*")) {
-                txtPrecio.setText(oldVal);
+                txtPrecioMinorista.setText(oldVal);
             }
         });
 
-        txtStock.textProperty().addListener((obs, oldVal, newVal) -> {
-            if (!newVal.matches("\\d*")) {
-                txtStock.setText(oldVal);
-            }
-        });
-
-        txtStockMinimo.textProperty().addListener((obs, oldVal, newVal) -> {
-            if (!newVal.matches("\\d*")) {
-                txtStockMinimo.setText(oldVal);
+        txtPrecioMayorista.textProperty().addListener((obs, oldVal, newVal) -> {
+            if (!newVal.matches("\\d*\\.?\\d*")) {
+                txtPrecioMayorista.setText(oldVal);
             }
         });
     }
@@ -150,8 +132,8 @@ public class ProductoController {
                 });
             } catch (DataAccessException e) {
                 logger.error("Error cargando productos", e);
-                Platform.runLater(() -> 
-                    AlertUtils.mostrarError("Error", "No se pudieron cargar los productos", e.getMessage())
+                Platform.runLater(() ->
+                        AlertUtils.mostrarError("Error", "No se pudieron cargar los productos", e.getMessage())
                 );
             }
         });
@@ -162,10 +144,10 @@ public class ProductoController {
         String termino = txtBuscar.getText().trim();
         ejecutarEnBackground(() -> {
             try {
-                var lista = termino.isEmpty() 
-                    ? productoService.listarTodos()
-                    : productoService.buscarPorDescripcion(termino);
-                
+                var lista = termino.isEmpty()
+                        ? productoService.listarTodos()
+                        : productoService.buscarPorNombre(termino);
+
                 Platform.runLater(() -> productos.setAll(lista));
             } catch (DataAccessException e) {
                 logger.error("Error buscando productos", e);
@@ -177,39 +159,42 @@ public class ProductoController {
     private void guardarProducto() {
         try {
             Producto producto = modoEdicion ? productoSeleccionado : new Producto();
-            
+
             // Mapear datos del formulario
             producto.setCodigo(txtCodigo.getText().trim());
-            producto.setDescripcion(txtDescripcion.getText().trim());
-            producto.setPrecio(Double.parseDouble(txtPrecio.getText().trim()));
-            producto.setStock(Integer.parseInt(txtStock.getText().trim()));
-            producto.setStockMinimo(txtStockMinimo.getText().trim().isEmpty() 
-                ? 5 
-                : Integer.parseInt(txtStockMinimo.getText().trim()));
-            producto.setCategoria(txtCategoria.getText().trim());
+            producto.setNombre(txtDescripcion.getText().trim());
+            producto.setMarca(txtMarca.getText().trim());
+            producto.setPrecioMinorista(Double.parseDouble(txtPrecioMinorista.getText().trim()));
+            producto.setPrecioMayorista(Double.parseDouble(txtPrecioMayorista.getText().trim()));
+
+            // Categoría por defecto (ID=1) si no se especifica
+            // En una versión completa, esto debería ser un ComboBox
+            if (producto.getCategoriaId() == null) {
+                producto.setCategoriaId(1);
+            }
 
             ejecutarEnBackground(() -> {
                 try {
-                    Producto guardado = modoEdicion 
-                        ? productoService.actualizar(producto)
-                        : productoService.crear(producto);
+                    Producto guardado = modoEdicion
+                            ? productoService.actualizar(producto)
+                            : productoService.crear(producto);
 
                     Platform.runLater(() -> {
-                        AlertUtils.mostrarExito("Éxito", 
-                            modoEdicion ? "Producto actualizado correctamente" : "Producto guardado correctamente");
+                        AlertUtils.mostrarExito("Éxito",
+                                modoEdicion ? "Producto actualizado correctamente" : "Producto guardado correctamente");
                         cargarProductos();
                         limpiarFormulario();
                         modoEdicion = false;
                     });
 
                 } catch (ValidationException e) {
-                    Platform.runLater(() -> 
-                        AlertUtils.mostrarAdvertencia("Validación", "Error de validación", e.getMessage())
+                    Platform.runLater(() ->
+                            AlertUtils.mostrarAdvertencia("Validación", "Error de validación", e.getMessage())
                     );
                 } catch (BusinessException | DataAccessException e) {
                     logger.error("Error guardando producto", e);
-                    Platform.runLater(() -> 
-                        AlertUtils.mostrarError("Error", "No se pudo guardar el producto", e.getMessage())
+                    Platform.runLater(() ->
+                            AlertUtils.mostrarError("Error", "No se pudo guardar el producto", e.getMessage())
                     );
                 } catch (NotFoundException e) {
                     throw new RuntimeException(e);
@@ -230,11 +215,10 @@ public class ProductoController {
 
         modoEdicion = true;
         txtCodigo.setText(productoSeleccionado.getCodigo());
-        txtDescripcion.setText(productoSeleccionado.getDescripcion());
-        txtPrecio.setText(productoSeleccionado.getPrecio().toString());
-        txtStock.setText(productoSeleccionado.getStock().toString());
-        txtStockMinimo.setText(productoSeleccionado.getStockMinimo().toString());
-        txtCategoria.setText(productoSeleccionado.getCategoria());
+        txtDescripcion.setText(productoSeleccionado.getNombre());
+        txtMarca.setText(productoSeleccionado.getMarca());
+        txtPrecioMinorista.setText(String.valueOf(productoSeleccionado.getPrecioMinorista()));
+        txtPrecioMayorista.setText(String.valueOf(productoSeleccionado.getPrecioMayorista()));
 
         txtCodigo.setDisable(true); // No permitir cambiar código en edición
         actualizarEstadoBotones();
@@ -248,9 +232,9 @@ public class ProductoController {
         }
 
         Optional<ButtonType> resultado = AlertUtils.mostrarConfirmacion(
-            "Confirmar eliminación",
-            "¿Está seguro que desea eliminar el producto?",
-            productoSeleccionado.getDescripcion()
+                "Confirmar eliminación",
+                "¿Está seguro que desea eliminar el producto?",
+                productoSeleccionado.getNombre()
         );
 
         if (resultado.isPresent() && resultado.get() == ButtonType.OK) {
@@ -264,8 +248,8 @@ public class ProductoController {
                     });
                 } catch (BusinessException | DataAccessException e) {
                     logger.error("Error eliminando producto", e);
-                    Platform.runLater(() -> 
-                        AlertUtils.mostrarError("Error", "No se pudo eliminar el producto", e.getMessage())
+                    Platform.runLater(() ->
+                            AlertUtils.mostrarError("Error", "No se pudo eliminar el producto", e.getMessage())
                     );
                 } catch (NotFoundException e) {
                     throw new RuntimeException(e);
@@ -291,9 +275,9 @@ public class ProductoController {
     private void limpiarFormulario() {
         txtCodigo.clear();
         txtDescripcion.clear();
-        txtPrecio.clear();
-        txtStock.clear();
-        txtStockMinimo.setText("5");
+        txtPrecioMinorista.clear();
+        txtPrecioMayorista.clear();
+        txtMarca.clear();
         txtCategoria.clear();
         txtCodigo.setDisable(false);
         productoSeleccionado = null;
@@ -322,24 +306,8 @@ public class ProductoController {
 
     @FXML
     private void mostrarStockBajo() {
-        ejecutarEnBackground(() -> {
-            try {
-                var lista = productoService.listarStockBajo();
-                Platform.runLater(() -> {
-                    if (lista.isEmpty()) {
-                        AlertUtils.mostrarInfo("Stock", "No hay productos con stock bajo");
-                    } else {
-                        productos.setAll(lista);
-                        AlertUtils.mostrarInfo("Stock Bajo", 
-                            String.format("Se encontraron %d productos con stock bajo", lista.size()));
-                    }
-                });
-            } catch (DataAccessException e) {
-                logger.error("Error obteniendo stock bajo", e);
-                Platform.runLater(() -> 
-                    AlertUtils.mostrarError("Error", "No se pudo consultar el stock")
-                );
-            }
-        });
+        AlertUtils.mostrarInfo("Información",
+                "En v2.0, el stock se maneja por variantes.\n" +
+                        "Por favor use la vista de Variantes y Stock para consultar stock bajo.");
     }
 }

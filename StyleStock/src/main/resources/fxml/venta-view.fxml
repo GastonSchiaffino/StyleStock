@@ -95,17 +95,17 @@
 
             <HBox spacing="10" alignment="CENTER_LEFT">
                 <Label text="Subtotal:" prefWidth="100" style="-fx-font-weight: bold;"/>
-                <Label fx:id="lblSubtotal" text="$0.00" style="-fx-font-weight: bold;" prefWidth="100"/>
+                <Label fx:id="lblSubtotal" text="0.00" style="-fx-font-weight: bold;" prefWidth="100"/>
             </HBox>
 
             <HBox spacing="10" alignment="CENTER_LEFT">
                 <Label text="Descuento:" prefWidth="100" style="-fx-font-weight: bold;"/>
-                <Label fx:id="lblDescuento" text="$0.00" style="-fx-font-weight: bold;" prefWidth="100"/>
+                <Label fx:id="lblDescuento" text="0.00" style="-fx-font-weight: bold;" prefWidth="100"/>
             </HBox>
 
             <HBox spacing="10" alignment="CENTER_LEFT">
                 <Label text="TOTAL:" prefWidth="100" style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
-                <Label fx:id="lblTotal" text="$0.00" 
+                <Label fx:id="lblTotal" text="0.00"
                        style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #2E7D32;" prefWidth="100"/>
             </HBox>
         </VBox>
@@ -132,12 +132,12 @@
 
             <HBox spacing="10" alignment="CENTER_LEFT">
                 <Label text="Total Pagado:" prefWidth="100" style="-fx-font-weight: bold;"/>
-                <Label fx:id="lblTotalPagado" text="$0.00" style="-fx-font-weight: bold; -fx-text-fill: green;" prefWidth="100"/>
+                <Label fx:id="lblTotalPagado" text="0.00" style="-fx-font-weight: bold; -fx-text-fill: green;" prefWidth="100"/>
             </HBox>
 
             <HBox spacing="10" alignment="CENTER_LEFT">
                 <Label text="Saldo:" prefWidth="100" style="-fx-font-weight: bold;"/>
-                <Label fx:id="lblSaldo" text="$0.00" style="-fx-font-weight: bold; -fx-text-fill: red;" prefWidth="100"/>
+                <Label fx:id="lblSaldo" text="0.00" style="-fx-font-weight: bold; -fx-text-fill: red;" prefWidth="100"/>
             </HBox>
         </VBox>
     </HBox>
