@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox spacing="10" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.style.stock.controller.VarianteController">
+    <padding>
+        <Insets top="15" right="15" bottom="15" left="15" />
+    </padding>
+
+    <!-- Título y Búsqueda -->
+    <HBox alignment="CENTER_LEFT" spacing="10">
+        <Label text="GESTIÓN DE VARIANTES Y STOCK" style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
+        <Pane HBox.hgrow="ALWAYS"/>
+        <Label text="Buscar:"/>
+        <TextField fx:id="txtBuscar" promptText="SKU, código o descripción..." prefWidth="300"/>
+        <Button text="Stock Bajo" onAction="#mostrarStockBajo" 
+                style="-fx-background-color: #FF9800; -fx-text-fill: white;" styleClass="button"/>
+    </HBox>
+
+    <Separator/>
+
+    <!-- Filtros -->
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <Label text="Producto:"/>
+        <ComboBox fx:id="cbProductos" promptText="Todos los productos" prefWidth="300" 
+                  onAction="#filtrarPorProducto"/>
+        <Label text="Categoría:"/>
+        <ComboBox fx:id="cbCategorias" promptText="Todas las categorías" prefWidth="200"
+                  onAction="#filtrarPorCategoria"/>
+        <Button text="Limpiar Filtros" onAction="#limpiarFiltros" styleClass="button"/>
+    </HBox>
+
+    <Separator/>
+
+    <!-- Formulario Nueva Variante -->
+    <TitledPane text="Nueva Variante" collapsible="true" fx:id="panelFormulario" expanded="false">
+        <VBox spacing="10">
+            <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
+
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Label text="Producto Base:" prefWidth="120"/>
+                <ComboBox fx:id="cbProductoBase" promptText="Seleccione producto" prefWidth="300"/>
+                <Button text="Ver Atributos" onAction="#verAtributosRequeridos" styleClass="button"/>
+            </HBox>
+
+            <GridPane hgap="10" vgap="10">
+                <Label text="SKU:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                <TextField fx:id="txtSku" promptText="Generado automático o manual" prefWidth="150"
+                           GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+                <Button text="Generar SKU" onAction="#generarSkuAutomatico" 
+                        GridPane.columnIndex="2" GridPane.rowIndex="0" styleClass="button"/>
+
+                <Label text="Código Barras:" GridPane.columnIndex="3" GridPane.rowIndex="0"/>
+                <TextField fx:id="txtCodigoBarras" promptText="Opcional" prefWidth="150"
+                           GridPane.columnIndex="4" GridPane.rowIndex="0"/>
+
+                <Label text="Precio Costo:" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                <TextField fx:id="txtPrecioCosto" promptText="0.00" prefWidth="100"
+                           GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+
+                <Label text="Precio Minorista:" GridPane.columnIndex="2" GridPane.rowIndex="1"/>
+                <TextField fx:id="txtPrecioMinorista" promptText="0.00" prefWidth="100"
+                           GridPane.columnIndex="3" GridPane.rowIndex="1"/>
+
+                <Label text="Precio Mayorista:" GridPane.columnIndex="4" GridPane.rowIndex="1"/>
+                <TextField fx:id="txtPrecioMayorista" promptText="0.00" prefWidth="100"
+                           GridPane.columnIndex="5" GridPane.rowIndex="1"/>
+
+                <Label text="Stock Inicial:" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+                <TextField fx:id="txtStock" text="0" prefWidth="80"
+                           GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+
+                <Label text="Stock Mínimo:" GridPane.columnIndex="2" GridPane.rowIndex="2"/>
+                <TextField fx:id="txtStockMinimo" text="5" prefWidth="80"
+                           GridPane.columnIndex="3" GridPane.rowIndex="2"/>
+            </GridPane>
+
+            <!-- Atributos Dinámicos (Talle, Color, etc) -->
+            <Label text="Atributos de la Variante:" style="-fx-font-weight: bold;"/>
+            <VBox fx:id="vboxAtributos" spacing="8">
+                <!-- Aquí se cargan dinámicamente los atributos según la categoría -->
+            </VBox>
+
+            <!-- Botones de Acción -->
+            <HBox spacing="10" alignment="CENTER_RIGHT">
+                <Button fx:id="btnGuardarVariante" text="Guardar Variante" onAction="#guardarVariante"
+                        style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold;" 
+                        styleClass="button"/>
+                <Button fx:id="btnCancelarVariante" text="Cancelar" onAction="#cancelarFormulario"
+                        styleClass="button"/>
+            </HBox>
+        </VBox>
+    </TitledPane>
+
+    <!-- Botones Acción Rápida -->
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <Button fx:id="btnNuevaVariante" text="+ Nueva Variante" onAction="#mostrarFormulario"
+                style="-fx-background-color: #2196F3; -fx-text-fill: white;" styleClass="button"/>
+        <Button text="Ajustar Stock" onAction="#ajustarStock" styleClass="button"/>
+        <Button text="Exportar a Excel" onAction="#exportarExcel" styleClass="button"/>
+        <Pane HBox.hgrow="ALWAYS"/>
+        <Label fx:id="lblTotalVariantes" text="Total variantes: 0" 
+               style="-fx-font-size: 12px; -fx-font-weight: bold;"/>
+    </HBox>
+
+    <Separator/>
+
+    <!-- Tabla de Variantes -->
+    <TableView fx:id="tablaVariantes" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="colId" text="ID" prefWidth="50"/>
+            <TableColumn fx:id="colSku" text="SKU" prefWidth="130"/>
+            <TableColumn fx:id="colProducto" text="Producto" prefWidth="200"/>
+            <TableColumn fx:id="colAtributos" text="Atributos" prefWidth="200"/>
+            <TableColumn fx:id="colPrecioMinorista" text="P. Minorista" prefWidth="100"/>
+            <TableColumn fx:id="colPrecioMayorista" text="P. Mayorista" prefWidth="100"/>
+            <TableColumn fx:id="colStock" text="Stock" prefWidth="70"/>
+            <TableColumn fx:id="colStockMinimo" text="Stock Mín." prefWidth="90"/>
+        </columns>
+    </TableView>
+
+    <!-- Barra Inferior -->
+    <HBox alignment="CENTER_RIGHT" spacing="10">
+        <ProgressIndicator fx:id="progressIndicator" visible="false" prefWidth="30" prefHeight="30"/>
+        <Pane HBox.hgrow="ALWAYS"/>
+        <Label text="ROJO = Stock bajo" style="-fx-text-fill: #FF5722; -fx-font-size: 11px;"/>
+        <Separator orientation="VERTICAL"/>
+        <Button fx:id="btnEditar" text="Editar Seleccionado" onAction="#editarVariante" styleClass="button"/>
+        <Button fx:id="btnEliminar" text="Eliminar Seleccionado" onAction="#eliminarVariante"
+                style="-fx-background-color: #f44336; -fx-text-fill: white;" styleClass="button"/>
+    </HBox>
+</VBox>

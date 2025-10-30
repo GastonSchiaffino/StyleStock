@@ -1,6 +1,3 @@
-// ============================================
-// VarianteService.java - CORREGIDO CON buscarPorTexto
-// ============================================
 package com.style.stock.service;
 
 import com.style.stock.dao.*;
@@ -27,11 +24,9 @@ public class VarianteService {
         logger.debug("Creando variante: {}", variante.getSku());
         validar(variante);
 
-        // Verificar que el producto exista
         productoDAO.findById(variante.getProductoId())
-            .orElseThrow(() -> new BusinessException("El producto no existe"));
+                .orElseThrow(() -> new BusinessException("El producto no existe"));
 
-        // Verificar SKU único
         if (varianteDAO.findBySku(variante.getSku()).isPresent()) {
             throw new ValidationException("sku", "Ya existe una variante con el SKU: " + variante.getSku());
         }
@@ -43,49 +38,72 @@ public class VarianteService {
 
     public Variante buscarPorId(Integer id) throws NotFoundException, DataAccessException {
         return varianteDAO.findById(id)
-            .orElseThrow(() -> new NotFoundException("Variante", id));
+                .orElseThrow(() -> new NotFoundException("Variante", id));
     }
 
     public Variante buscarPorSku(String sku) throws NotFoundException, DataAccessException {
         return varianteDAO.findBySku(sku)
-            .orElseThrow(() -> new NotFoundException("Variante con SKU", sku));
+                .orElseThrow(() -> new NotFoundException("Variante con SKU", sku));
     }
 
     /**
-     * Búsqueda de variantes por texto (SKU o descripción del producto)
-     * @param termino Término a buscar
-     * @return Lista de variantes coincidentes
+     * Búsqueda de variantes por texto - IMPLEMENTACIÓN COMPLETA
      */
     public List<Variante> buscarPorTexto(String termino) throws DataAccessException {
         if (termino == null || termino.trim().isEmpty()) {
             return new ArrayList<>();
         }
 
-        String busqueda = termino.trim();
+        String busqueda = termino.trim().toLowerCase();
         List<Variante> resultados = new ArrayList<>();
 
         try {
-            // Primero intentar búsqueda exacta por SKU
-            if (busqueda.matches("[A-Za-z0-9-]+")) {
-                try {
-                    Optional<Variante> porSku = varianteDAO.findBySku(busqueda);
-                    if (porSku.isPresent()) {
-                        resultados.add(porSku.get());
-                        return resultados;
+            // 1. Búsqueda exacta por SKU
+            try {
+                Optional<Variante> porSku = varianteDAO.findBySku(busqueda.toUpperCase());
+                if (porSku.isPresent()) {
+                    resultados.add(porSku.get());
+                    return resultados;
+                }
+            } catch (DataAccessException e) {
+                logger.debug("No se encontró variante con SKU exacto: {}", busqueda);
+            }
+
+            // 2. Búsqueda parcial: obtener todos los productos activos y filtrar
+            List<Producto> productos = productoDAO.findAll(true);
+
+            for (Producto producto : productos) {
+                // Filtrar productos que coincidan con el término
+                boolean coincide = producto.getCodigo().toLowerCase().contains(busqueda) ||
+                        producto.getNombre().toLowerCase().contains(busqueda) ||
+                        (producto.getMarca() != null && producto.getMarca().toLowerCase().contains(busqueda));
+
+                if (coincide) {
+                    // Obtener todas las variantes de este producto
+                    List<Variante> variantes = varianteDAO.findByProducto(producto.getId());
+                    for (Variante v : variantes) {
+                        v.setProducto(producto); // Setear el producto para descripción completa
+                        resultados.add(v);
                     }
-                } catch (DataAccessException e) {
-                    logger.debug("No se encontró variante con SKU exacto: {}", busqueda);
                 }
             }
 
-            // Si no hay resultados exactos, hacer búsqueda parcial
-            // Buscar variantes que contengan el término en SKU o en descripción de producto
-            // Nota: Esta es una búsqueda en memoria sobre el conjunto de variantes activas
-            // Para búsqueda más eficiente, se puede implementar en el DAO con LIKE
-            var todasLasVariantes = varianteDAO.findByProducto(-1); // Esto debería retornar todas
-            // Alternativa: hacer búsqueda directa en DAO
-            
-            logger.debug("Búsqueda parcial por término: {}", busqueda);
+            // 3. Si no hay resultados, buscar por SKU parcial en todas las variantes
+            if (resultados.isEmpty()) {
+                List<Producto> todosProductos = productoDAO.findAll(true);
+                for (Producto p : todosProductos) {
+                    List<Variante> variantes = varianteDAO.findByProducto(p.getId());
+                    for (Variante v : variantes) {
+                        if (v.getSku().toLowerCase().contains(busqueda) ||
+                                (v.getCodigoBarras() != null && v.getCodigoBarras().contains(busqueda))) {
+                            v.setProducto(p);
+                            resultados.add(v);
+                        }
+                    }
+                }
+            }
+
+            logger.debug("Búsqueda '{}' retornó {} resultados", termino, resultados.size());
             return resultados;
 
         } catch (DataAccessException e) {
@@ -102,7 +120,7 @@ public class VarianteService {
         return varianteDAO.findStockBajo();
     }
 
-    public void ajustarStock(Integer id, Integer cantidad, String motivo) 
+    public void ajustarStock(Integer id, Integer cantidad, String motivo)
             throws BusinessException, DataAccessException, NotFoundException {
         Variante variante = buscarPorId(id);
         int nuevoStock = variante.getStock() + cantidad;
@@ -115,7 +133,7 @@ public class VarianteService {
         logger.info("Stock ajustado para variante {}: {} -> {}", id, variante.getStock(), nuevoStock);
     }
 
-    public boolean verificarStock(Integer varianteId, Integer cantidad) 
+    public boolean verificarStock(Integer varianteId, Integer cantidad)
             throws DataAccessException, NotFoundException {
         Variante variante = buscarPorId(varianteId);
         return variante.getStock() >= cantidad;
@@ -128,7 +146,6 @@ public class VarianteService {
             throw new ValidationException("variante", e.getMessage());
         }
 
-        // Validar que si hereda precios del producto, estos sean válidos
         if (variante.getPrecioMayorista() > variante.getPrecioMinorista()) {
             throw new ValidationException("precio", "El precio mayorista no puede ser mayor al minorista");
         }

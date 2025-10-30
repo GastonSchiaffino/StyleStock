@@ -11,7 +11,7 @@ import java.util.List;
 // ============================================
 // CATEGORIA SERVICE
 // ============================================
-class CategoriaService {
+public class CategoriaService {
     private static final Logger logger = LoggerFactory.getLogger(CategoriaService.class);
     private final CategoriaDAO categoriaDAO;
 

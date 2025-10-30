@@ -44,7 +44,7 @@
     </TitledPane>
 
     <!-- AGREGAR PRODUCTOS -->
-    <TitledPane text="Agregar Productos" collapsible="false">
+    <TitledPane text="Agregar Productos" collapsible="false" >
         <VBox spacing="10">
             <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
 
@@ -57,7 +57,7 @@
                         style="-fx-background-color: #4CAF50; -fx-text-fill: white;" styleClass="button"/>
             </HBox>
 
-            <ListView fx:id="lvVariantes" prefHeight="100"/>
+            <ListView fx:id="lvVariantes" prefHeight="250"/>
         </VBox>
     </TitledPane>
 

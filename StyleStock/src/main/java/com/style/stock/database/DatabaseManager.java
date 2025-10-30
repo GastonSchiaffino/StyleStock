@@ -14,6 +14,8 @@ import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Gestor de base de datos con Connection Pool (HikariCP)
@@ -44,30 +46,27 @@ public class DatabaseManager {
             // Configuración de HikariCP
             HikariConfig config = new HikariConfig();
             config.setJdbcUrl(jdbcUrl);
-            config.setMaximumPoolSize(5); // SQLite no soporta muchas conexiones concurrentes
+            config.setMaximumPoolSize(5);
             config.setMinimumIdle(1);
             config.setConnectionTimeout(30000);
             config.setIdleTimeout(600000);
             config.setMaxLifetime(1800000);
-            
-            // Configuraciones específicas para SQLite
+
             config.addDataSourceProperty("cachePrepStmts", "true");
             config.addDataSourceProperty("prepStmtCacheSize", "250");
             config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
-            
-            // Configuración PRAGMA para SQLite
+
             config.setConnectionInitSql(
-                "PRAGMA foreign_keys = ON;" +
-                "PRAGMA journal_mode = WAL;" +  // Write-Ahead Logging para mejor concurrencia
-                "PRAGMA synchronous = NORMAL;" +
-                "PRAGMA temp_store = MEMORY;" +
-                "PRAGMA cache_size = -64000"    // 64MB de cache
+                    "PRAGMA foreign_keys = ON;" +
+                            "PRAGMA journal_mode = WAL;" +
+                            "PRAGMA synchronous = NORMAL;" +
+                            "PRAGMA temp_store = MEMORY;" +
+                            "PRAGMA cache_size = -64000"
             );
 
             dataSource = new HikariDataSource(config);
             logger.info("Connection pool inicializado correctamente: {}", jdbcUrl);
 
-            // Crear tablas si no existen
             initializeSchema();
 
         } catch (Exception e) {
@@ -90,9 +89,6 @@ public class DatabaseManager {
         return appDir.resolve(DB_FILE_NAME);
     }
 
-    /**
-     * Obtiene una conexión del pool
-     */
     public Connection getConnection() throws SQLException {
         if (dataSource == null || dataSource.isClosed()) {
             throw new SQLException("DataSource no disponible");
@@ -101,65 +97,118 @@ public class DatabaseManager {
     }
 
     /**
-     * Inicializa el schema de la base de datos
+     * Inicializa el schema - VERSIÓN CORREGIDA para manejar triggers y bloques BEGIN/END
      */
     private void initializeSchema() {
         try (Connection conn = getConnection()) {
             logger.info("Inicializando schema de base de datos...");
-            
+
             InputStream is = getClass().getResourceAsStream("/sql/create_tables.sql");
             if (is == null) {
                 logger.warn("Archivo create_tables.sql no encontrado");
                 return;
             }
 
-            try (BufferedReader br = new BufferedReader(new InputStreamReader(is))) {
-                StringBuilder sb = new StringBuilder();
-                String line;
+            List<String> statements = parseSqlStatements(is);
 
-                while ((line = br.readLine()) != null) {
-                    // Ignorar comentarios
-                    if (line.trim().startsWith("--") || line.trim().isEmpty()) {
-                        continue;
-                    }
-                    
-                    sb.append(line).append("\n");
+            for (String sql : statements) {
+                if (sql.trim().isEmpty()) continue;
 
-                    // Ejecutar cuando encontramos punto y coma
-                    if (line.trim().endsWith(";")) {
-                        String sql = sb.toString().trim();
-                        if (!sql.isEmpty()) {
-                            try (Statement stmt = conn.createStatement()) {
-                                stmt.execute(sql);
-                                logger.debug("SQL ejecutado exitosamente");
-                            } catch (SQLException e) {
-                                logger.warn("Error ejecutando SQL (puede ser esperado): {}", 
-                                           e.getMessage());
-                            }
-                        }
-                        sb.setLength(0);
+                try (Statement stmt = conn.createStatement()) {
+                    stmt.execute(sql);
+                    logger.debug("SQL ejecutado exitosamente: {}",
+                            sql.length() > 50 ? sql.substring(0, 50) + "..." : sql);
+                } catch (SQLException e) {
+                    // Solo log de warning para errores esperados (tablas ya existentes, etc)
+                    if (e.getMessage().contains("already exists") ||
+                            e.getMessage().contains("duplicate column")) {
+                        logger.debug("SQL ya ejecutado previamente: {}", e.getMessage());
+                    } else {
+                        logger.warn("Error ejecutando SQL: {}", e.getMessage());
                     }
                 }
-
-                // Ejecutar cualquier SQL pendiente
-                if (sb.length() > 0) {
-                    String sql = sb.toString().trim();
-                    if (!sql.isEmpty()) {
-                        try (Statement stmt = conn.createStatement()) {
-                            stmt.execute(sql);
-                        } catch (SQLException e) {
-                            logger.warn("Error ejecutando SQL final: {}", e.getMessage());
-                        }
-                    }
-                }
-
-                logger.info("Schema inicializado correctamente");
             }
+
+            logger.info("Schema inicializado correctamente");
 
         } catch (Exception e) {
             logger.error("Error inicializando schema", e);
             throw new RuntimeException("Error al inicializar el schema de la base de datos", e);
         }
+    }
+
+    /**
+     * Parser mejorado que maneja correctamente triggers con BEGIN/END
+     */
+    private List<String> parseSqlStatements(InputStream is) throws Exception {
+        List<String> statements = new ArrayList<>();
+
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(is))) {
+            StringBuilder currentStatement = new StringBuilder();
+            String line;
+            int beginCount = 0;
+            boolean inTrigger = false;
+
+            while ((line = br.readLine()) != null) {
+                String trimmed = line.trim();
+
+                // Ignorar comentarios y líneas vacías
+                if (trimmed.isEmpty() || trimmed.startsWith("--")) {
+                    continue;
+                }
+
+                // Detectar inicio de trigger o bloque BEGIN
+                if (trimmed.toUpperCase().startsWith("CREATE TRIGGER") ||
+                        trimmed.toUpperCase().startsWith("CREATE VIEW")) {
+                    inTrigger = true;
+                }
+
+                // Contar BEGIN/END para triggers
+                if (trimmed.toUpperCase().equals("BEGIN")) {
+                    beginCount++;
+                }
+                if (trimmed.toUpperCase().equals("END;")) {
+                    beginCount--;
+                }
+
+                currentStatement.append(line).append("\n");
+
+                // Determinar si la sentencia está completa
+                boolean isComplete = false;
+
+                if (inTrigger) {
+                    // Para triggers, esperar hasta END;
+                    if (trimmed.toUpperCase().equals("END;") && beginCount == 0) {
+                        isComplete = true;
+                        inTrigger = false;
+                    }
+                } else {
+                    // Para sentencias normales, buscar punto y coma al final
+                    if (trimmed.endsWith(";")) {
+                        isComplete = true;
+                    }
+                }
+
+                if (isComplete) {
+                    String stmt = currentStatement.toString().trim();
+                    if (!stmt.isEmpty()) {
+                        statements.add(stmt);
+                    }
+                    currentStatement.setLength(0);
+                }
+            }
+
+            // Agregar cualquier sentencia pendiente
+            if (currentStatement.length() > 0) {
+                String stmt = currentStatement.toString().trim();
+                if (!stmt.isEmpty()) {
+                    statements.add(stmt);
+                }
+            }
+        }
+
+        logger.debug("Parseadas {} sentencias SQL", statements.size());
+        return statements;
     }
 
     /**
