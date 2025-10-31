@@ -366,6 +366,8 @@ public class VentaController {
         }
     }
 
+    // Reemplazar el método completarVenta() en VentaController.java
+
     @FXML
     private void completarVenta() {
         Cliente cliente = cbClientes.getValue();
@@ -387,19 +389,19 @@ public class VentaController {
         // Verificar que el pago cubra el total
         double totalPagado = pagos.stream().mapToDouble(PagoVenta::getMonto).sum();
         double total = calcularTotal();
-        
+
         if (totalPagado < total) {
-            AlertUtils.mostrarAdvertencia("Pago insuficiente", 
-                String.format("Total: $%.2f - Pagado: $%.2f - Falta: $%.2f", 
-                    total, totalPagado, total - totalPagado));
+            AlertUtils.mostrarAdvertencia("Pago insuficiente",
+                    String.format("Total: $%.2f - Pagado: $%.2f - Falta: $%.2f",
+                            total, totalPagado, total - totalPagado));
             return;
         }
 
         // Confirmar
         Optional<ButtonType> confirmacion = AlertUtils.mostrarConfirmacion(
-            "Completar Venta",
-            "¿Confirma que desea completar esta venta?",
-            String.format("Total: $%.2f\nPagado: $%.2f", total, totalPagado)
+                "Completar Venta",
+                "¿Confirma que desea completar esta venta?",
+                String.format("Total: $%.2f\nPagado: $%.2f", total, totalPagado)
         );
 
         if (confirmacion.isEmpty() || confirmacion.get() != ButtonType.OK) {
@@ -409,8 +411,14 @@ public class VentaController {
         ejecutarEnBackground(() -> {
             try {
                 Venta venta = new Venta();
+
+                // CRÍTICO: Setear cliente primero para que se propague el ID
                 venta.setCliente(cliente);
+
+                // Asegurar que los IDs estén presentes
+                venta.setClienteId(cliente.getId());
                 venta.setTipoClienteId(cliente.getTipoClienteId());
+
                 venta.setFecha(dpFecha.getValue());
                 venta.setTipoComprobante(Venta.TipoComprobante.valueOf(cbTipoComprobante.getValue()));
                 venta.setTipoVenta(Venta.TipoVenta.valueOf(cbTipoVenta.getValue()));
@@ -432,16 +440,21 @@ public class VentaController {
                     venta.agregarPago(pago);
                 }
 
+                // Log para debug
+                logger.debug("Venta a guardar - ClienteId: {}, TipoClienteId: {}, Items: {}, Total: {}",
+                        venta.getClienteId(), venta.getTipoClienteId(),
+                        venta.getDetalles().size(), venta.getTotal());
+
                 Venta guardada = ventaService.crear(venta);
 
                 Platform.runLater(() -> {
                     AlertUtils.mostrarExito("Éxito",
-                        "Venta completada correctamente\nComprobante: " + guardada.getNumeroComprobante());
+                            "Venta completada correctamente\nComprobante: " + guardada.getNumeroComprobante());
 
                     // Preguntar si desea imprimir/generar PDF
                     Optional<ButtonType> imprimir = AlertUtils.mostrarConfirmacion(
-                        "Imprimir",
-                        "¿Desea imprimir el comprobante?"
+                            "Imprimir",
+                            "¿Desea imprimir el comprobante?"
                     );
 
                     if (imprimir.isPresent() && imprimir.get() == ButtonType.OK) {
@@ -454,16 +467,17 @@ public class VentaController {
             } catch (InsufficientStockException e) {
                 logger.warn("Stock insuficiente", e);
                 Platform.runLater(() ->
-                    AlertUtils.mostrarAdvertencia("Stock Insuficiente", e.getMessage())
+                        AlertUtils.mostrarAdvertencia("Stock Insuficiente", e.getMessage())
                 );
             } catch (ValidationException e) {
+                logger.error("Error de validación", e);
                 Platform.runLater(() ->
-                    AlertUtils.mostrarAdvertencia("Validación", e.getMessage())
+                        AlertUtils.mostrarAdvertencia("Validación", e.getMessage())
                 );
             } catch (BusinessException | DataAccessException | NotFoundException e) {
                 logger.error("Error completando venta", e);
                 Platform.runLater(() ->
-                    AlertUtils.mostrarError("Error", "No se pudo completar la venta", e.getMessage())
+                        AlertUtils.mostrarError("Error", "No se pudo completar la venta", e.getMessage())
                 );
             }
         });

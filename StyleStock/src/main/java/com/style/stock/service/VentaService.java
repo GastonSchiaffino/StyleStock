@@ -26,26 +26,44 @@ public class VentaService {
     /**
      * Crea una nueva venta con validaciones de stock
      */
+    // Reemplazar el método crear() en VentaService.java
+
     public Venta crear(Venta venta) throws BusinessException, ValidationException, DataAccessException, NotFoundException {
         logger.debug("Creando venta para cliente: {}", venta.getClienteId());
+
+        // IMPORTANTE: Asegurar que clienteId esté presente
+        if (venta.getCliente() != null && venta.getClienteId() == null) {
+            venta.setClienteId(venta.getCliente().getId());
+        }
+
+        // IMPORTANTE: Asegurar que tipoClienteId esté presente
+        if (venta.getTipoClienteId() == null && venta.getCliente() != null) {
+            venta.setTipoClienteId(venta.getCliente().getTipoClienteId());
+        }
 
         validar(venta);
 
         // Verificar que el cliente exista
-        clienteDAO.findById(venta.getClienteId())
-            .orElseThrow(() -> new NotFoundException("Cliente", venta.getClienteId()));
+        Cliente cliente = clienteDAO.findById(venta.getClienteId())
+                .orElseThrow(() -> new NotFoundException("Cliente", venta.getClienteId()));
+
+        // Setear el cliente completo en la venta
+        venta.setCliente(cliente);
 
         // Verificar stock de cada variante
         for (DetalleVenta detalle : venta.getDetalles()) {
             Variante variante = varianteService.buscarPorId(detalle.getVarianteId());
-            
+
             if (variante.getStock() < detalle.getCantidad()) {
                 throw new InsufficientStockException(
-                    variante.getDescripcionCompleta(),
-                    variante.getStock(),
-                    detalle.getCantidad()
+                        variante.getDescripcionCompleta(),
+                        variante.getStock(),
+                        detalle.getCantidad()
                 );
             }
+
+            // Asegurar que el detalle tenga la variante completa
+            detalle.setVariante(variante);
         }
 
         // Validar que los pagos cubran el total
@@ -62,7 +80,7 @@ public class VentaService {
         // Guardar (la transacción se maneja en el DAO)
         Venta guardada = ventaDAO.save(venta);
         logger.info("Venta creada: {} - Total: ${}", guardada.getNumeroComprobante(), guardada.getTotal());
-        
+
         return guardada;
     }
 
@@ -98,17 +116,17 @@ public class VentaService {
         // Validar detalles
         for (DetalleVenta detalle : venta.getDetalles()) {
             try {
-                detalle.validate();
+                detalle.validateBasicFields();
             } catch (IllegalArgumentException e) {
                 throw new ValidationException("detalle", e.getMessage());
             }
         }
 
-        // Validar pagos
+        // ✅ Validar solo campos básicos de pagos (sin ventaId)
         if (venta.getPagos() != null) {
             for (PagoVenta pago : venta.getPagos()) {
                 try {
-                    pago.validate();
+                    pago.validateBasicFields();
                 } catch (IllegalArgumentException e) {
                     throw new ValidationException("pago", e.getMessage());
                 }

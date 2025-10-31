@@ -39,6 +39,13 @@ public class DetalleVenta {
     }
 
     public void validate() throws IllegalArgumentException {
+        if (ventaId == null) {
+            throw new IllegalArgumentException("El ID de la venta es obligatorio");
+        }
+        validateBasicFields();
+    }
+
+    public void validateBasicFields() throws IllegalArgumentException {
         if (varianteId == null) {
             throw new IllegalArgumentException("La variante es obligatoria");
         }

@@ -35,10 +35,22 @@ public class PagoVenta {
         this.comision = metodoPago.calcularComision(monto);
     }
 
+    /**
+     * Validación completa (requiere ventaId)
+     * Usar DESPUÉS de persistir
+     */
     public void validate() throws IllegalArgumentException {
         if (ventaId == null) {
             throw new IllegalArgumentException("El ID de la venta es obligatorio");
         }
+        validateBasicFields();
+    }
+
+    /**
+     * Validación básica (NO requiere ventaId)
+     * Usar ANTES de persistir
+     */
+    public void validateBasicFields() throws IllegalArgumentException {
         if (metodoPagoId == null) {
             throw new IllegalArgumentException("El método de pago es obligatorio");
         }

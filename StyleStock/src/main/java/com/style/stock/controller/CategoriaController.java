@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Optional;
 
 /**
- * Controlador para gestión de categorías y atributos
+ * Controlador COMPLETO para gestión de categorías y atributos
  */
 public class CategoriaController {
     private static final Logger logger = LoggerFactory.getLogger(CategoriaController.class);
@@ -49,13 +49,15 @@ public class CategoriaController {
     @FXML private ComboBox<Categoria> cbCategoriaAsignar;
     @FXML private ComboBox<Atributo> cbAtributoAsignar;
     @FXML private CheckBox chkRequerido;
-    @FXML private ListView<String> lvAtributosAsignados;
+    @FXML private TextField txtOrdenAsignacion;
+    @FXML private ListView<AtributoAsignado> lvAtributosAsignados;
 
     @FXML private ProgressIndicator progressIndicator;
 
     // Datos
     private final ObservableList<Categoria> categorias;
     private final ObservableList<Atributo> atributos;
+    private final ObservableList<AtributoAsignado> atributosAsignados;
     private Categoria categoriaSeleccionada;
     private Atributo atributoSeleccionado;
 
@@ -65,6 +67,7 @@ public class CategoriaController {
         this.valorAtributoService = new ValorAtributoService();
         this.categorias = FXCollections.observableArrayList();
         this.atributos = FXCollections.observableArrayList();
+        this.atributosAsignados = FXCollections.observableArrayList();
     }
 
     @FXML
@@ -84,27 +87,57 @@ public class CategoriaController {
         // Tabla Atributos
         colIdAtributo.setCellValueFactory(new PropertyValueFactory<>("id"));
         colNombreAtributo.setCellValueFactory(new PropertyValueFactory<>("nombre"));
-        colTipoAtributo.setCellValueFactory(cellData -> 
-            new javafx.beans.property.SimpleStringProperty(
-                cellData.getValue().getTipo().getValor()
-            )
+        colTipoAtributo.setCellValueFactory(cellData ->
+                new javafx.beans.property.SimpleStringProperty(
+                        cellData.getValue().getTipo().getValor()
+                )
         );
         colOrdenAtributo.setCellValueFactory(new PropertyValueFactory<>("orden"));
         tablaAtributos.setItems(atributos);
+
+        // ListView de atributos asignados
+        lvAtributosAsignados.setItems(atributosAsignados);
+        lvAtributosAsignados.setCellFactory(lv -> new ListCell<AtributoAsignado>() {
+            @Override
+            protected void updateItem(AtributoAsignado item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(String.format("%s - %s %s (Orden: %d)",
+                            item.atributo.getNombre(),
+                            item.atributo.getTipo().getValor(),
+                            item.requerido ? "[REQUERIDO]" : "[OPCIONAL]",
+                            item.orden
+                    ));
+                }
+            }
+        });
     }
 
     private void configurarEventos() {
         tablaCategorias.getSelectionModel().selectedItemProperty().addListener(
-            (obs, oldVal, newVal) -> categoriaSeleccionada = newVal
+                (obs, oldVal, newVal) -> {
+                    categoriaSeleccionada = newVal;
+                    if (newVal != null) {
+                        cargarAtributosAsignados(newVal.getId());
+                    }
+                }
         );
 
         tablaAtributos.getSelectionModel().selectedItemProperty().addListener(
-            (obs, oldVal, newVal) -> atributoSeleccionado = newVal
+                (obs, oldVal, newVal) -> atributoSeleccionado = newVal
         );
 
         txtOrdenAtributo.textProperty().addListener((obs, o, n) -> {
             if (!n.matches("\\d*")) txtOrdenAtributo.setText(o);
         });
+
+        if (txtOrdenAsignacion != null) {
+            txtOrdenAsignacion.textProperty().addListener((obs, o, n) -> {
+                if (!n.matches("\\d*")) txtOrdenAsignacion.setText(o);
+            });
+        }
     }
 
     private void cargarDatos() {
@@ -122,8 +155,8 @@ public class CategoriaController {
 
             } catch (DataAccessException e) {
                 logger.error("Error cargando datos", e);
-                Platform.runLater(() -> 
-                    AlertUtils.mostrarError("Error", "No se pudieron cargar los datos")
+                Platform.runLater(() ->
+                        AlertUtils.mostrarError("Error", "No se pudieron cargar los datos")
                 );
             }
         });
@@ -137,6 +170,7 @@ public class CategoriaController {
         txtDescripcionCategoria.clear();
         chkRequiereVariantes.setSelected(true);
         categoriaSeleccionada = null;
+        txtNombreCategoria.requestFocus();
     }
 
     @FXML
@@ -149,23 +183,22 @@ public class CategoriaController {
 
         ejecutarEnBackground(() -> {
             try {
-                Categoria categoria = categoriaSeleccionada != null ? 
-                    categoriaSeleccionada : new Categoria();
-                
+                Categoria categoria = categoriaSeleccionada != null ?
+                        categoriaSeleccionada : new Categoria();
+
                 categoria.setNombre(nombre);
                 categoria.setDescripcion(txtDescripcionCategoria.getText().trim());
                 categoria.setRequiereVariantes(chkRequiereVariantes.isSelected());
 
                 if (categoriaSeleccionada == null) {
                     categoriaService.crear(categoria);
-                    Platform.runLater(() -> 
-                        AlertUtils.mostrarExito("Éxito", "Categoría creada correctamente")
+                    Platform.runLater(() ->
+                            AlertUtils.mostrarExito("Éxito", "Categoría creada correctamente")
                     );
                 } else {
-                    // Actualizar
-                    Platform.runLater(() -> 
-                        AlertUtils.mostrarAdvertencia("En desarrollo", 
-                            "Actualización de categorías en desarrollo")
+                    categoriaService.actualizar(categoria);
+                    Platform.runLater(() ->
+                            AlertUtils.mostrarExito("Éxito", "Categoría actualizada correctamente")
                     );
                 }
 
@@ -173,13 +206,13 @@ public class CategoriaController {
                 Platform.runLater(this::nuevaCategoria);
 
             } catch (ValidationException e) {
-                Platform.runLater(() -> 
-                    AlertUtils.mostrarAdvertencia("Validación", e.getMessage())
+                Platform.runLater(() ->
+                        AlertUtils.mostrarAdvertencia("Validación", e.getMessage())
                 );
-            } catch (DataAccessException e) {
+            } catch (DataAccessException | NotFoundException e) {
                 logger.error("Error guardando categoría", e);
-                Platform.runLater(() -> 
-                    AlertUtils.mostrarError("Error", "No se pudo guardar la categoría")
+                Platform.runLater(() ->
+                        AlertUtils.mostrarError("Error", "No se pudo guardar la categoría")
                 );
             }
         });
@@ -195,6 +228,7 @@ public class CategoriaController {
         txtNombreCategoria.setText(categoriaSeleccionada.getNombre());
         txtDescripcionCategoria.setText(categoriaSeleccionada.getDescripcion());
         chkRequiereVariantes.setSelected(categoriaSeleccionada.getRequiereVariantes());
+        txtNombreCategoria.requestFocus();
     }
 
     @FXML
@@ -205,14 +239,31 @@ public class CategoriaController {
         }
 
         Optional<ButtonType> result = AlertUtils.mostrarConfirmacion(
-            "Confirmar eliminación",
-            "¿Eliminar categoría?",
-            categoriaSeleccionada.getNombre()
+                "Confirmar eliminación",
+                "¿Está seguro de eliminar la categoría?",
+                categoriaSeleccionada.getNombre() + "\n\n⚠️ Esto puede afectar productos asociados"
         );
 
         if (result.isPresent() && result.get() == ButtonType.OK) {
-            AlertUtils.mostrarAdvertencia("En desarrollo", 
-                "Eliminación de categorías en desarrollo");
+            ejecutarEnBackground(() -> {
+                try {
+                    categoriaService.eliminar(categoriaSeleccionada.getId());
+                    Platform.runLater(() -> {
+                        AlertUtils.mostrarExito("Éxito", "Categoría eliminada");
+                        cargarDatos();
+                        nuevaCategoria();
+                    });
+                } catch (BusinessException e) {
+                    Platform.runLater(() ->
+                            AlertUtils.mostrarAdvertencia("No se puede eliminar", e.getMessage())
+                    );
+                } catch (DataAccessException | NotFoundException e) {
+                    logger.error("Error eliminando categoría", e);
+                    Platform.runLater(() ->
+                            AlertUtils.mostrarError("Error", "No se pudo eliminar la categoría")
+                    );
+                }
+            });
         }
     }
 
@@ -229,6 +280,7 @@ public class CategoriaController {
         cbTipoAtributo.setValue("LISTA");
         txtOrdenAtributo.setText("0");
         atributoSeleccionado = null;
+        txtNombreAtributo.requestFocus();
     }
 
     @FXML
@@ -243,22 +295,22 @@ public class CategoriaController {
 
         ejecutarEnBackground(() -> {
             try {
-                Atributo atributo = atributoSeleccionado != null ? 
-                    atributoSeleccionado : new Atributo();
-                
+                Atributo atributo = atributoSeleccionado != null ?
+                        atributoSeleccionado : new Atributo();
+
                 atributo.setNombre(nombre);
                 atributo.setTipo(Atributo.TipoAtributo.valueOf(tipo));
                 atributo.setOrden(Integer.parseInt(txtOrdenAtributo.getText().trim()));
 
                 if (atributoSeleccionado == null) {
                     atributoService.crear(atributo);
-                    Platform.runLater(() -> 
-                        AlertUtils.mostrarExito("Éxito", "Atributo creado correctamente")
+                    Platform.runLater(() ->
+                            AlertUtils.mostrarExito("Éxito", "Atributo creado correctamente")
                     );
                 } else {
                     atributoService.actualizar(atributo);
-                    Platform.runLater(() -> 
-                        AlertUtils.mostrarExito("Éxito", "Atributo actualizado")
+                    Platform.runLater(() ->
+                            AlertUtils.mostrarExito("Éxito", "Atributo actualizado")
                     );
                 }
 
@@ -266,13 +318,13 @@ public class CategoriaController {
                 Platform.runLater(this::nuevoAtributo);
 
             } catch (ValidationException e) {
-                Platform.runLater(() -> 
-                    AlertUtils.mostrarAdvertencia("Validación", e.getMessage())
+                Platform.runLater(() ->
+                        AlertUtils.mostrarAdvertencia("Validación", e.getMessage())
                 );
             } catch (DataAccessException | NotFoundException e) {
                 logger.error("Error guardando atributo", e);
-                Platform.runLater(() -> 
-                    AlertUtils.mostrarError("Error", "No se pudo guardar el atributo")
+                Platform.runLater(() ->
+                        AlertUtils.mostrarError("Error", "No se pudo guardar el atributo")
                 );
             }
         });
@@ -286,8 +338,9 @@ public class CategoriaController {
         }
 
         txtNombreAtributo.setText(atributoSeleccionado.getNombre());
-        cbTipoAtributo.setValue(atributoSeleccionado.getTipo().getValor());
+        cbTipoAtributo.setValue(atributoSeleccionado.getTipo().name());
         txtOrdenAtributo.setText(String.valueOf(atributoSeleccionado.getOrden()));
+        txtNombreAtributo.requestFocus();
     }
 
     @FXML
@@ -298,9 +351,9 @@ public class CategoriaController {
         }
 
         Optional<ButtonType> result = AlertUtils.mostrarConfirmacion(
-            "Confirmar eliminación",
-            "¿Eliminar atributo?",
-            atributoSeleccionado.getNombre()
+                "Confirmar eliminación",
+                "¿Eliminar atributo?",
+                atributoSeleccionado.getNombre()
         );
 
         if (result.isPresent() && result.get() == ButtonType.OK) {
@@ -314,8 +367,8 @@ public class CategoriaController {
                     });
                 } catch (DataAccessException | NotFoundException e) {
                     logger.error("Error eliminando atributo", e);
-                    Platform.runLater(() -> 
-                        AlertUtils.mostrarError("Error", "No se pudo eliminar el atributo")
+                    Platform.runLater(() ->
+                            AlertUtils.mostrarError("Error", "No se pudo eliminar el atributo")
                     );
                 }
             });
@@ -330,13 +383,12 @@ public class CategoriaController {
         }
 
         if (atributoSeleccionado.getTipo() != Atributo.TipoAtributo.LISTA &&
-            atributoSeleccionado.getTipo() != Atributo.TipoAtributo.COLOR) {
-            AlertUtils.mostrarInfo("Información", 
-                "Solo los atributos tipo LISTA o COLOR tienen valores predefinidos");
+                atributoSeleccionado.getTipo() != Atributo.TipoAtributo.COLOR) {
+            AlertUtils.mostrarInfo("Información",
+                    "Solo los atributos tipo LISTA o COLOR tienen valores predefinidos");
             return;
         }
 
-        // Abrir diálogo para gestionar valores
         TextInputDialog dialog = new TextInputDialog();
         dialog.setTitle("Agregar Valor");
         dialog.setHeaderText("Agregar valor para: " + atributoSeleccionado.getNombre());
@@ -351,17 +403,17 @@ public class CategoriaController {
                     va.setValor(valor.trim());
                     valorAtributoService.crear(va);
 
-                    Platform.runLater(() -> 
-                        AlertUtils.mostrarExito("Éxito", "Valor agregado correctamente")
+                    Platform.runLater(() ->
+                            AlertUtils.mostrarExito("Éxito", "Valor agregado correctamente")
                     );
                 } catch (ValidationException e) {
-                    Platform.runLater(() -> 
-                        AlertUtils.mostrarAdvertencia("Validación", e.getMessage())
+                    Platform.runLater(() ->
+                            AlertUtils.mostrarAdvertencia("Validación", e.getMessage())
                     );
                 } catch (DataAccessException e) {
                     logger.error("Error guardando valor", e);
-                    Platform.runLater(() -> 
-                        AlertUtils.mostrarError("Error", "No se pudo guardar el valor")
+                    Platform.runLater(() ->
+                            AlertUtils.mostrarError("Error", "No se pudo guardar el valor")
                     );
                 }
             });
@@ -374,17 +426,20 @@ public class CategoriaController {
     private void cargarAtributosCategoria() {
         Categoria categoria = cbCategoriaAsignar.getValue();
         if (categoria == null) return;
+        cargarAtributosAsignados(categoria.getId());
+    }
 
+    private void cargarAtributosAsignados(Integer categoriaId) {
         ejecutarEnBackground(() -> {
             try {
-                var atributosAsignados = categoriaService.obtenerAtributosDeCategoria(categoria.getId());
-                
-                ObservableList<String> items = FXCollections.observableArrayList();
-                for (Atributo a : atributosAsignados) {
-                    items.add(a.getNombre());
+                var atributosAsig = categoriaService.obtenerAtributosDeCategoria(categoriaId);
+
+                ObservableList<AtributoAsignado> items = FXCollections.observableArrayList();
+                for (Atributo a : atributosAsig) {
+                    items.add(new AtributoAsignado(a, true, a.getOrden()));
                 }
 
-                Platform.runLater(() -> lvAtributosAsignados.setItems(items));
+                Platform.runLater(() -> atributosAsignados.setAll(items));
 
             } catch (DataAccessException e) {
                 logger.error("Error cargando atributos de categoría", e);
@@ -398,27 +453,83 @@ public class CategoriaController {
         Atributo atributo = cbAtributoAsignar.getValue();
 
         if (categoria == null || atributo == null) {
-            AlertUtils.mostrarAdvertencia("Selección requerida", 
-                "Seleccione categoría y atributo");
+            AlertUtils.mostrarAdvertencia("Selección requerida",
+                    "Seleccione categoría y atributo");
             return;
         }
 
-        AlertUtils.mostrarInfo("En desarrollo", 
-            "Asignación de atributos en desarrollo.\n" +
-            "Se implementará con CategoriaDAO.asociarAtributo()");
+        boolean yaAsignado = atributosAsignados.stream()
+                .anyMatch(aa -> aa.atributo.getId().equals(atributo.getId()));
+
+        if (yaAsignado) {
+            AlertUtils.mostrarAdvertencia("Ya asignado",
+                    "Este atributo ya está asignado a la categoría");
+            return;
+        }
+
+        boolean requerido = chkRequerido.isSelected();
+        int orden = txtOrdenAsignacion != null && !txtOrdenAsignacion.getText().isEmpty()
+                ? Integer.parseInt(txtOrdenAsignacion.getText())
+                : 0;
+
+        ejecutarEnBackground(() -> {
+            try {
+                categoriaService.asociarAtributo(categoria.getId(), atributo.getId(), requerido, orden);
+
+                Platform.runLater(() -> {
+                    AlertUtils.mostrarExito("Éxito", "Atributo asignado correctamente");
+                    cargarAtributosAsignados(categoria.getId());
+                });
+
+            } catch (DataAccessException e) {
+                logger.error("Error asignando atributo", e);
+                Platform.runLater(() ->
+                        AlertUtils.mostrarError("Error", "No se pudo asignar el atributo")
+                );
+            }
+        });
     }
 
     @FXML
     private void quitarAtributo() {
-        String seleccionado = lvAtributosAsignados.getSelectionModel().getSelectedItem();
+        AtributoAsignado seleccionado = lvAtributosAsignados.getSelectionModel().getSelectedItem();
+        Categoria categoria = cbCategoriaAsignar.getValue();
+
         if (seleccionado == null) {
-            AlertUtils.mostrarAdvertencia("Selección requerida", 
-                "Seleccione un atributo de la lista");
+            AlertUtils.mostrarAdvertencia("Selección requerida",
+                    "Seleccione un atributo de la lista");
             return;
         }
 
-        AlertUtils.mostrarInfo("En desarrollo", 
-            "Desasignación de atributos en desarrollo");
+        if (categoria == null) {
+            AlertUtils.mostrarAdvertencia("Error", "Seleccione una categoría");
+            return;
+        }
+
+        Optional<ButtonType> result = AlertUtils.mostrarConfirmacion(
+                "Confirmar",
+                "¿Desasociar atributo de la categoría?",
+                seleccionado.atributo.getNombre()
+        );
+
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            ejecutarEnBackground(() -> {
+                try {
+                    categoriaService.desasociarAtributo(categoria.getId(), seleccionado.atributo.getId());
+
+                    Platform.runLater(() -> {
+                        AlertUtils.mostrarExito("Éxito", "Atributo desasociado");
+                        cargarAtributosAsignados(categoria.getId());
+                    });
+
+                } catch (DataAccessException e) {
+                    logger.error("Error desasociando atributo", e);
+                    Platform.runLater(() ->
+                            AlertUtils.mostrarError("Error", "No se pudo desasociar el atributo")
+                    );
+                }
+            });
+        }
     }
 
     private void ejecutarEnBackground(Runnable tarea) {
@@ -430,5 +541,18 @@ public class CategoriaController {
                 Platform.runLater(() -> progressIndicator.setVisible(false));
             }
         }).start();
+    }
+
+    // Clase auxiliar
+    private static class AtributoAsignado {
+        final Atributo atributo;
+        final boolean requerido;
+        final int orden;
+
+        AtributoAsignado(Atributo atributo, boolean requerido, int orden) {
+            this.atributo = atributo;
+            this.requerido = requerido;
+            this.orden = orden;
+        }
     }
 }

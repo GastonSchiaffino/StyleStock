@@ -149,30 +149,34 @@
             <padding><Insets top="10" right="15" bottom="15" left="15"/></padding>
             
             <Separator/>
-            
+
             <!-- Asignación Categoría-Atributos -->
             <TitledPane text="Asignar Atributos a Categoría" collapsible="true" expanded="false">
                 <VBox spacing="10">
                     <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
-                    
+
                     <HBox spacing="10" alignment="CENTER_LEFT">
                         <Label text="Categoría:"/>
-                        <ComboBox fx:id="cbCategoriaAsignar" promptText="Seleccione categoría" 
+                        <ComboBox fx:id="cbCategoriaAsignar" promptText="Seleccione categoría"
                                   prefWidth="200" onAction="#cargarAtributosCategoria"/>
                         <Label text="Atributo:"/>
-                        <ComboBox fx:id="cbAtributoAsignar" promptText="Seleccione atributo" 
+                        <ComboBox fx:id="cbAtributoAsignar" promptText="Seleccione atributo"
                                   prefWidth="200"/>
                         <CheckBox fx:id="chkRequerido" text="Requerido" selected="true"/>
-                        <Button text="Asignar" onAction="#asignarAtributo" 
-                                style="-fx-background-color: #2196F3; -fx-text-fill: white;" 
+                        <Label text="Orden:"/>
+                        <TextField fx:id="txtOrdenAsignacion" text="0" prefWidth="60"/>
+                        <Button text="Asignar" onAction="#asignarAtributo"
+                                style="-fx-background-color: #2196F3; -fx-text-fill: white;"
                                 styleClass="button"/>
                     </HBox>
 
                     <Label text="Atributos asignados a la categoría seleccionada:"/>
-                    <ListView fx:id="lvAtributosAsignados" prefHeight="100"/>
+                    <ListView fx:id="lvAtributosAsignados" prefHeight="120"/>
 
                     <HBox spacing="10" alignment="CENTER_RIGHT">
-                        <Button text="Quitar Seleccionado" onAction="#quitarAtributo" styleClass="button"/>
+                        <Button text="Quitar Seleccionado" onAction="#quitarAtributo"
+                                style="-fx-background-color: #f44336; -fx-text-fill: white;"
+                                styleClass="button"/>
                     </HBox>
                 </VBox>
             </TitledPane>

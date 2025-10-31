@@ -61,6 +61,7 @@ public class VentaDAO {
                 try (ResultSet rs = ps.getGeneratedKeys()) {
                     if (rs.next()) {
                         ventaId = rs.getInt(1);
+                        System.out.println("Se crea id de venta: " + ventaId);
                         venta.setId(ventaId);
                     } else {
                         throw new DataAccessException("No se pudo obtener el ID de la venta");
