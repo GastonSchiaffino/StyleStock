@@ -74,7 +74,7 @@ public class MainController {
 
     @FXML
     private void showCategorias() throws IOException {
-        loadView("/fxml/categoria-view-mejorado.fxml"); // CAMBIADO: Vista mejorada
+        loadView("/fxml/categoria-view.fxml"); // CAMBIADO: Vista mejorada
     }
 
     @FXML

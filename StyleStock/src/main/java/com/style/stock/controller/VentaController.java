@@ -14,15 +14,16 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.util.StringConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.LocalDate;
-import java.util.List;
 import java.util.Optional;
 
 /**
- * Controlador para gestión de ventas
+ * Controlador para gestión de ventas - CORREGIDO
+ * Incluye búsqueda optimizada y validaciones mejoradas
  */
 public class VentaController {
     private static final Logger logger = LoggerFactory.getLogger(VentaController.class);
@@ -33,13 +34,12 @@ public class VentaController {
     private final VarianteService varianteService;
     private final ProductoService productoService;
     private final MetodoPagoService metodoPagoService;
-    private final TipoClienteService tipoClienteService;
 
     // Componentes UI - Datos del cliente
     @FXML private ComboBox<Cliente> cbClientes;
     @FXML private Button btnNuevoCliente;
-    @FXML private ComboBox<String> cbTipoVenta; // MINORISTA / MAYORISTA
-    @FXML private ComboBox<String> cbTipoComprobante; // TICKET / FACTURA_A / FACTURA_B / FACTURA_C
+    @FXML private ComboBox<String> cbTipoVenta;
+    @FXML private ComboBox<String> cbTipoComprobante;
     @FXML private DatePicker dpFecha;
     @FXML private TextArea txtNotas;
 
@@ -91,7 +91,6 @@ public class VentaController {
         this.varianteService = new VarianteService();
         this.productoService = new ProductoService();
         this.metodoPagoService = new MetodoPagoService();
-        this.tipoClienteService = new TipoClienteService();
 
         this.clientes = FXCollections.observableArrayList();
         this.variantesDisponibles = FXCollections.observableArrayList();
@@ -131,7 +130,6 @@ public class VentaController {
         colPrecio.setCellValueFactory(new PropertyValueFactory<>("precioUnitario"));
         colSubtotal.setCellValueFactory(new PropertyValueFactory<>("subtotal"));
 
-        // Formatear precio y subtotal
         colPrecio.setCellFactory(col -> new TableCell<>() {
             @Override
             protected void updateItem(Double precio, boolean empty) {
@@ -151,18 +149,54 @@ public class VentaController {
         tablaItems.setItems(items);
     }
 
+    // CORREGIDO: Configurar ComboBoxes con StringConverters
     private void configurarCombos() {
         cbClientes.setItems(clientes);
+
+        // NUEVO: Converter para mostrar correctamente los clientes
+        cbClientes.setConverter(new StringConverter<Cliente>() {
+            @Override
+            public String toString(Cliente cliente) {
+                return cliente == null ? "" : cliente.getNombreCompleto();
+            }
+
+            @Override
+            public Cliente fromString(String string) {
+                return clientes.stream()
+                        .filter(c -> c.getNombreCompleto().equals(string))
+                        .findFirst()
+                        .orElse(null);
+            }
+        });
+
+        // NUEVO: Hacer el ComboBox de clientes editable para búsqueda
+        cbClientes.setEditable(true);
+
         lvVariantes.setItems(variantesDisponibles);
+
         cbMetodoPago.setItems(metodosPago);
 
-        // Tipos de venta
+        // NUEVO: Converter para métodos de pago
+        cbMetodoPago.setConverter(new StringConverter<MetodoPago>() {
+            @Override
+            public String toString(MetodoPago metodo) {
+                return metodo == null ? "" : metodo.getNombre();
+            }
+
+            @Override
+            public MetodoPago fromString(String string) {
+                return metodosPago.stream()
+                        .filter(m -> m.getNombre().equals(string))
+                        .findFirst()
+                        .orElse(null);
+            }
+        });
+
         cbTipoVenta.setItems(FXCollections.observableArrayList("MINORISTA", "MAYORISTA"));
         cbTipoVenta.setValue("MINORISTA");
 
-        // Tipos de comprobante
         cbTipoComprobante.setItems(FXCollections.observableArrayList(
-            "TICKET", "FACTURA_A", "FACTURA_B", "FACTURA_C"
+                "TICKET", "FACTURA_A", "FACTURA_B", "FACTURA_C"
         ));
         cbTipoComprobante.setValue("TICKET");
 
@@ -199,19 +233,21 @@ public class VentaController {
             }
         });
 
-        // Listener para actualizar totales cuando cambian items
         items.addListener((javafx.collections.ListChangeListener<DetalleVenta>) c -> {
             actualizarTotales();
         });
 
-        // Listener para actualizar saldo cuando cambian pagos
         pagos.addListener((javafx.collections.ListChangeListener<PagoVenta>) c -> {
             actualizarSaldoPago();
         });
 
-        // Búsqueda de productos en tiempo real
+        // CORREGIDO: Búsqueda en tiempo real al escribir
         txtBuscarProducto.textProperty().addListener((obs, oldVal, newVal) -> {
-            buscarVariantes(newVal);
+            if (newVal != null && !newVal.trim().isEmpty()) {
+                buscarVariantes(newVal);
+            } else {
+                variantesDisponibles.clear();
+            }
         });
 
         // Al cambiar tipo de venta, actualizar precios
@@ -229,14 +265,15 @@ public class VentaController {
             }
         });
 
-        // Validar CUIT si se selecciona Factura A o B
+        // MEJORADO: Validar CUIT antes de cambiar comprobante
         cbTipoComprobante.valueProperty().addListener((obs, oldVal, newVal) -> {
-            validarRequisitosCuit(newVal);
+            if (newVal != null && !validarRequisitosCuit(newVal)) {
+                Platform.runLater(() -> cbTipoComprobante.setValue(oldVal));
+            }
         });
     }
 
     private void configurarListaVariantes() {
-        // Configurar CellFactory personalizado para mostrar info completa
         lvVariantes.setCellFactory(lv -> new ListCell<Variante>() {
             @Override
             protected void updateItem(Variante variante, boolean empty) {
@@ -247,7 +284,6 @@ public class VentaController {
                     setGraphic(null);
                     setStyle("");
                 } else {
-                    // Crear layout visual rico
                     VBox container = new VBox(5);
                     container.setStyle("-fx-padding: 8; -fx-background-radius: 5;");
 
@@ -295,7 +331,6 @@ public class VentaController {
 
                     container.getChildren().addAll(linea1, linea2, linea3);
 
-                    // Highlight si stock bajo
                     if (variante.isStockBajo()) {
                         container.setStyle(
                                 "-fx-padding: 8; " +
@@ -317,28 +352,22 @@ public class VentaController {
     private void cargarDatosIniciales() {
         ejecutarEnBackground(() -> {
             try {
-                // Cargar clientes
                 var listaClientes = clienteService.listarTodos();
                 Platform.runLater(() -> clientes.setAll(listaClientes));
 
-                // Cargar métodos de pago
                 var listaMetodos = metodoPagoService.listarTodos();
                 Platform.runLater(() -> metodosPago.setAll(listaMetodos));
 
             } catch (DataAccessException e) {
                 logger.error("Error cargando datos iniciales", e);
                 Platform.runLater(() ->
-                    AlertUtils.mostrarError("Error", "No se pudieron cargar los datos iniciales")
+                        AlertUtils.mostrarError("Error", "No se pudieron cargar los datos iniciales")
                 );
             }
         });
     }
 
-    /**
-     * Búsqueda de variantes por texto (SKU o descripción del producto)
-     * @param termino Término a buscar
-     * @return Lista de variantes coincidentes
-     */
+    // CORREGIDO: Cargar productos completos para cada variante
     @FXML
     private void buscarVariantes(String termino) {
         if (termino == null || termino.trim().isEmpty()) {
@@ -348,11 +377,11 @@ public class VentaController {
 
         ejecutarEnBackground(() -> {
             try {
-                List<Variante> resultado = varianteService.buscarPorTexto(termino);
+                var resultado = varianteService.buscarPorTexto(termino);
 
-                // IMPORTANTE: Cargar el producto completo para cada variante
+                // CRÍTICO: Cargar el producto completo para cada variante
                 for (Variante v : resultado) {
-                    if (v.getProductoId() != null) {
+                    if (v.getProductoId() != null && v.getProducto() == null) {
                         try {
                             Producto producto = productoService.buscarPorId(v.getProductoId());
                             v.setProducto(producto);
@@ -388,7 +417,7 @@ public class VentaController {
             // Verificar stock
             if (variante.getStock() < cantidad) {
                 AlertUtils.mostrarAdvertencia("Stock insuficiente",
-                    String.format("Stock disponible: %d unidades", variante.getStock()));
+                        String.format("Stock disponible: %d unidades", variante.getStock()));
                 return;
             }
 
@@ -443,7 +472,6 @@ public class VentaController {
                 cuotas = Integer.parseInt(txtCuotas.getText().trim());
             }
 
-            // Crear pago
             PagoVenta pago = new PagoVenta();
             pago.setMetodoPago(metodo);
             pago.setMonto(monto);
@@ -452,15 +480,13 @@ public class VentaController {
 
             pagos.add(pago);
 
-            // Agregar a lista visual
-            String textoPago = String.format("%s: $%.2f%s", 
-                metodo.getNombre(), 
-                monto,
-                cuotas > 1 ? String.format(" (%d cuotas)", cuotas) : ""
+            String textoPago = String.format("%s: $%.2f%s",
+                    metodo.getNombre(),
+                    monto,
+                    cuotas > 1 ? String.format(" (%d cuotas)", cuotas) : ""
             );
             lvPagos.getItems().add(textoPago);
 
-            // Limpiar campos
             txtMontoPago.clear();
             txtCuotas.setText("1");
 
@@ -468,8 +494,6 @@ public class VentaController {
             AlertUtils.mostrarAdvertencia("Datos inválidos", "Ingrese valores válidos");
         }
     }
-
-    // Reemplazar el método completarVenta() en VentaController.java
 
     @FXML
     private void completarVenta() {
@@ -515,10 +539,7 @@ public class VentaController {
             try {
                 Venta venta = new Venta();
 
-                // CRÍTICO: Setear cliente primero para que se propague el ID
                 venta.setCliente(cliente);
-
-                // Asegurar que los IDs estén presentes
                 venta.setClienteId(cliente.getId());
                 venta.setTipoClienteId(cliente.getTipoClienteId());
 
@@ -533,17 +554,14 @@ public class VentaController {
                 }
                 venta.setDescuento(descuento);
 
-                // Agregar detalles
                 for (DetalleVenta item : items) {
                     venta.agregarDetalle(item);
                 }
 
-                // Agregar pagos
                 for (PagoVenta pago : pagos) {
                     venta.agregarPago(pago);
                 }
 
-                // Log para debug
                 logger.debug("Venta a guardar - ClienteId: {}, TipoClienteId: {}, Items: {}, Total: {}",
                         venta.getClienteId(), venta.getTipoClienteId(),
                         venta.getDetalles().size(), venta.getTotal());
@@ -554,7 +572,6 @@ public class VentaController {
                     AlertUtils.mostrarExito("Éxito",
                             "Venta completada correctamente\nComprobante: " + guardada.getNumeroComprobante());
 
-                    // Preguntar si desea imprimir/generar PDF
                     Optional<ButtonType> imprimir = AlertUtils.mostrarConfirmacion(
                             "Imprimir",
                             "¿Desea imprimir el comprobante?"
@@ -577,7 +594,7 @@ public class VentaController {
                 Platform.runLater(() ->
                         AlertUtils.mostrarAdvertencia("Validación", e.getMessage())
                 );
-            } catch (BusinessException | DataAccessException | NotFoundException e) {
+            } catch (Exception e) {
                 logger.error("Error completando venta", e);
                 Platform.runLater(() ->
                         AlertUtils.mostrarError("Error", "No se pudo completar la venta", e.getMessage())
@@ -598,12 +615,12 @@ public class VentaController {
         txtCantidad.clear();
         txtMontoPago.clear();
         txtCuotas.setText("1");
-        
+
         items.clear();
         pagos.clear();
         lvPagos.getItems().clear();
         variantesDisponibles.clear();
-        
+
         actualizarTotales();
         actualizarSaldoPago();
     }
@@ -637,7 +654,6 @@ public class VentaController {
         lblTotalPagado.setText(String.format("$%.2f", totalPagado));
         lblSaldo.setText(String.format("$%.2f", saldo));
 
-        // Cambiar color del saldo
         if (saldo <= 0) {
             lblSaldo.setStyle("-fx-text-fill: green; -fx-font-weight: bold;");
             btnCompletarVenta.setDisable(false);
@@ -649,29 +665,42 @@ public class VentaController {
 
     private void actualizarPreciosItems() {
         boolean esMayorista = "MAYORISTA".equals(cbTipoVenta.getValue());
-        
+
         for (DetalleVenta detalle : items) {
-            double nuevoPrecio = esMayorista 
-                ? detalle.getVariante().getPrecioMayorista()
-                : detalle.getVariante().getPrecioMinorista();
-            
+            double nuevoPrecio = esMayorista
+                    ? detalle.getVariante().getPrecioMayorista()
+                    : detalle.getVariante().getPrecioMinorista();
+
             detalle.setPrecioUnitario(nuevoPrecio);
             detalle.setPrecioTipo(esMayorista ? "MAYORISTA" : "MINORISTA");
             detalle.calcularSubtotal();
         }
-        
+
         tablaItems.refresh();
         actualizarTotales();
     }
 
-    private void validarRequisitosCuit(String tipoComprobante) {
+    // MEJORADO: Validación CUIT con bloqueo
+    private boolean validarRequisitosCuit(String tipoComprobante) {
         if ("FACTURA_A".equals(tipoComprobante) || "FACTURA_B".equals(tipoComprobante)) {
             Cliente cliente = cbClientes.getValue();
-            if (cliente != null && (cliente.getCuit() == null || cliente.getCuit().isEmpty())) {
-                AlertUtils.mostrarAdvertencia("CUIT requerido", 
-                    "Las facturas A y B requieren que el cliente tenga CUIT registrado");
+            if (cliente == null) {
+                AlertUtils.mostrarAdvertencia("Cliente requerido",
+                        "Debe seleccionar un cliente antes de elegir tipo de comprobante");
+                return false;
+            }
+
+            if (cliente.getCuit() == null || cliente.getCuit().trim().isEmpty()) {
+                AlertUtils.mostrarAdvertencia("CUIT requerido",
+                        "Las facturas A y B requieren que el cliente tenga CUIT registrado.\n\n" +
+                                "Por favor:\n" +
+                                "1. Cancele esta venta\n" +
+                                "2. Agregue el CUIT al cliente\n" +
+                                "3. Intente nuevamente");
+                return false;
             }
         }
+        return true;
     }
 
     private double calcularTotal() {
@@ -688,8 +717,10 @@ public class VentaController {
     }
 
     private void imprimirComprobante(Venta venta) {
-        // TODO: Implementar generación de PDF o impresión
         logger.info("Generando comprobante para venta: {}", venta.getNumeroComprobante());
+        AlertUtils.mostrarInfo("Imprimir",
+                "Funcionalidad de impresión en desarrollo.\n" +
+                        "Comprobante: " + venta.getNumeroComprobante());
     }
 
     private void ejecutarEnBackground(Runnable tarea) {
