@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.image.Image?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.style.stock.controller.MainController"
+            style="-fx-background-color: #F5F7FA;">
+    
+    <!-- HEADER -->
+    <top>
+        <HBox styleClass="hbox" alignment="CENTER_LEFT" spacing="15" 
+              style="-fx-background-color: #000000; -fx-padding: 10;">
+            <ImageView fitWidth="220" preserveRatio="true">
+                <image>
+                    <Image url="@../icons/StyleSR_Logo_Black.png" />
+                </image>
+            </ImageView>
+            <Pane HBox.hgrow="ALWAYS"/>
+            <Label text="v2.0" style="-fx-text-fill: #999; -fx-font-size: 11px;"/>
+            <Label text="Tema:"/>
+            <ChoiceBox fx:id="themeChoice" prefWidth="100" />
+        </HBox>
+    </top>
+    
+    <!-- SIDEBAR MENU -->
+    <left>
+        <VBox spacing="5" styleClass="vbox" prefWidth="240" 
+              style="-fx-background-color: #000000; -fx-padding: 20;">
+            
+            <Label text="MENÚ PRINCIPAL" 
+                   style="-fx-text-fill: #CCCCCC; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 5 0 10 0;"/>
+            
+            <!-- VENTAS -->
+            <TitledPane text="💰 VENTAS" expanded="true" styleClass="menu-group">
+                <VBox spacing="3">
+                    <Button text="Nueva Venta" onAction="#showVentas" 
+                            styleClass="submenu-button" maxWidth="Infinity"/>
+                    <Button text="Historial de Ventas" styleClass="submenu-button" maxWidth="Infinity"/>
+                </VBox>
+            </TitledPane>
+            
+            <!-- INVENTARIO -->
+            <TitledPane text="📦 INVENTARIO" expanded="false" styleClass="menu-group">
+                <VBox spacing="3">
+                    <Button text="Productos y Variantes" onAction="#showProductos"
+                            styleClass="submenu-button" maxWidth="Infinity"/>
+                    <Button text="Stock Bajo" styleClass="submenu-button" maxWidth="Infinity"/>
+                    <Button text="Categorías" onAction="#showCategorias" 
+                            styleClass="submenu-button" maxWidth="Infinity"/>
+                </VBox>
+            </TitledPane>
+
+            <!-- CLIENTES -->
+            <TitledPane text="👥 CLIENTES" expanded="false" styleClass="menu-group">
+                <VBox spacing="3">
+                    <Button text="Gestión de Clientes" onAction="#showClientes" 
+                            styleClass="submenu-button" maxWidth="Infinity"/>
+                    <Button text="Tipos de Cliente" styleClass="submenu-button" maxWidth="Infinity"/>
+                </VBox>
+            </TitledPane>
+
+            <!-- REPORTES -->
+            <TitledPane text="📊 REPORTES" expanded="false" styleClass="menu-group">
+                <VBox spacing="3">
+                    <Button text="Ventas por Período" onAction="#showReportes" 
+                            styleClass="submenu-button" maxWidth="Infinity"/>
+                    <Button text="Productos Más Vendidos" styleClass="submenu-button" maxWidth="Infinity"/>
+                    <Button text="Stock Valorizado" styleClass="submenu-button" maxWidth="Infinity"/>
+                    <Button text="Movimientos de Stock" styleClass="submenu-button" maxWidth="Infinity"/>
+                </VBox>
+            </TitledPane>
+
+            <!-- CONFIGURACIÓN -->
+            <TitledPane text="⚙️ CONFIGURACIÓN" expanded="false" styleClass="menu-group">
+                <VBox spacing="3">
+                    <Button text="Atributos" styleClass="submenu-button" maxWidth="Infinity"/>
+                    <Button text="Métodos de Pago" styleClass="submenu-button" maxWidth="Infinity"/>
+                    <Button text="Configuración General" onAction="#showConfiguracion" 
+                            styleClass="submenu-button" maxWidth="Infinity"/>
+                    <Button text="Backup" styleClass="submenu-button" maxWidth="Infinity"/>
+                </VBox>
+            </TitledPane>
+
+            <!-- Espacio flexible -->
+            <Pane VBox.vgrow="ALWAYS"/>
+
+            <!-- INFO -->
+            <Separator style="-fx-background-color: #333;"/>
+            <Label text="StyleStock Showroom" 
+                   style="-fx-text-fill: #666; -fx-font-size: 10px; -fx-padding: 10 0 0 0;"/>
+            <Label text="Sistema de Gestión de Ventas" 
+                   style="-fx-text-fill: #666; -fx-font-size: 10px;"/>
+        </VBox>
+    </left>
+    
+    <!-- CONTENIDO PRINCIPAL -->
+    <center>
+        <StackPane fx:id="mainContent" 
+                   style="-fx-background-color: #FFFFFF; -fx-padding: 0;">
+            <!-- Aquí se cargan las vistas dinámicamente -->
+        </StackPane>
+    </center>
+
+    <!-- FOOTER (opcional) -->
+    <bottom>
+        <HBox alignment="CENTER" spacing="20" 
+              style="-fx-background-color: #F0F0F0; -fx-padding: 8;">
+            <Label text="💡 Tip: Use atajos de teclado para agilizar el proceso" 
+                   style="-fx-text-fill: #666; -fx-font-size: 11px;"/>
+            <Pane HBox.hgrow="ALWAYS"/>
+            <Label text="🟢 Sistema Operativo" 
+                   style="-fx-text-fill: #4CAF50; -fx-font-size: 11px; -fx-font-weight: bold;"/>
+        </HBox>
+    </bottom>
+</BorderPane>

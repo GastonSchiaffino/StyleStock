@@ -1,0 +1,352 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox spacing="15" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.style.stock.controller.ConfiguracionController">
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <!-- Título -->
+    <HBox alignment="CENTER_LEFT" spacing="10">
+        <Label text="CONFIGURACIÓN DEL SISTEMA" 
+               style="-fx-font-size: 20px; -fx-font-weight: bold;"/>
+    </HBox>
+
+    <Separator/>
+
+    <!-- Tabs de Configuración -->
+    <TabPane VBox.vgrow="ALWAYS" tabClosingPolicy="UNAVAILABLE">
+        
+        <!-- TAB: Datos de la Empresa -->
+        <Tab text="🏢 Empresa">
+            <ScrollPane fitToWidth="true">
+                <VBox spacing="15">
+                    <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
+
+                    <Label text="Datos de la Empresa" 
+                           style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
+
+                    <GridPane hgap="15" vgap="12">
+                        <Label text="Nombre o Razón Social:" 
+                               GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                        <TextField fx:id="txtNombreEmpresa" promptText="StyleStock Showroom" 
+                                   prefWidth="350" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+
+                        <Label text="Dirección:" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                        <TextField fx:id="txtDireccionEmpresa" promptText="Calle, Número, Localidad" 
+                                   prefWidth="350" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+
+                        <Label text="Teléfono:" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+                        <TextField fx:id="txtTelefonoEmpresa" promptText="+54 9 11 1234-5678" 
+                                   prefWidth="200" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+
+                        <Label text="Email:" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+                        <TextField fx:id="txtEmailEmpresa" promptText="contacto@stylestock.com" 
+                                   prefWidth="300" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+
+                        <Label text="CUIT:" GridPane.columnIndex="0" GridPane.rowIndex="4"/>
+                        <TextField fx:id="txtCuitEmpresa" promptText="XX-XXXXXXXX-X" 
+                                   prefWidth="150" GridPane.columnIndex="1" GridPane.rowIndex="4"/>
+
+                        <Label text="Pie de Comprobante:" GridPane.columnIndex="0" GridPane.rowIndex="5"/>
+                        <TextArea fx:id="txtPieComprobante" 
+                                  promptText="Gracias por su compra. Vuelva pronto!" 
+                                  prefHeight="60" prefWidth="350" 
+                                  GridPane.columnIndex="1" GridPane.rowIndex="5"/>
+                    </GridPane>
+
+                    <HBox spacing="10" alignment="CENTER_RIGHT">
+                        <Button text="Guardar Datos de Empresa" onAction="#guardarDatosEmpresa"
+                                style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold;" 
+                                styleClass="button"/>
+                    </HBox>
+                </VBox>
+            </ScrollPane>
+        </Tab>
+
+        <!-- TAB: Stock y Alertas -->
+        <Tab text="📦 Stock">
+            <VBox spacing="15">
+                <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
+
+                <Label text="Configuración de Stock" 
+                       style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
+
+                <VBox spacing="12">
+                    <HBox spacing="15" alignment="CENTER_LEFT">
+                        <Label text="Stock mínimo global por defecto:" prefWidth="250"/>
+                        <Spinner fx:id="spinStockMinimo" initialValue="5" min="0" max="100" 
+                                 prefWidth="80" editable="true"/>
+                        <Label text="unidades" style="-fx-text-fill: #666;"/>
+                    </HBox>
+
+                    <HBox spacing="15" alignment="CENTER_LEFT">
+                        <CheckBox fx:id="chkAlertasStockActivas" text="Activar alertas de stock bajo" 
+                                  selected="true"/>
+                    </HBox>
+
+                    <HBox spacing="15" alignment="CENTER_LEFT">
+                        <CheckBox fx:id="chkGenerarSkuAuto" text="Generar SKU automáticamente" 
+                                  selected="true"/>
+                        <Label text="(formato: PROD-CAT-001)" 
+                               style="-fx-text-fill: #666; -fx-font-size: 11px;"/>
+                    </HBox>
+
+                    <Separator/>
+
+                    <Label text="Movimientos de Stock" style="-fx-font-weight: bold;"/>
+
+                    <HBox spacing="15" alignment="CENTER_LEFT">
+                        <CheckBox fx:id="chkRegistrarMovimientos" 
+                                  text="Registrar todos los movimientos en auditoría" 
+                                  selected="true"/>
+                    </HBox>
+
+                    <HBox spacing="15" alignment="CENTER_LEFT">
+                        <Label text="Retener movimientos por:" prefWidth="250"/>
+                        <Spinner fx:id="spinDiasMovimientos" initialValue="90" min="30" max="365" 
+                                 prefWidth="80" editable="true"/>
+                        <Label text="días" style="-fx-text-fill: #666;"/>
+                    </HBox>
+                </VBox>
+
+                <HBox spacing="10" alignment="CENTER_RIGHT">
+                    <Button text="Guardar Configuración de Stock" onAction="#guardarConfigStock"
+                            style="-fx-background-color: #4CAF50; -fx-text-fill: white;" 
+                            styleClass="button"/>
+                </HBox>
+            </VBox>
+        </Tab>
+
+        <!-- TAB: Backup -->
+        <Tab text="💾 Backup">
+            <VBox spacing="15">
+                <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
+
+                <Label text="Copias de Seguridad" 
+                       style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
+
+                <VBox spacing="12">
+                    <HBox spacing="15" alignment="CENTER_LEFT">
+                        <CheckBox fx:id="chkBackupAutomatico" text="Realizar backup automático" 
+                                  selected="true"/>
+                    </HBox>
+
+                    <HBox spacing="15" alignment="CENTER_LEFT">
+                        <Label text="Frecuencia de backup:" prefWidth="250"/>
+                        <Spinner fx:id="spinDiasBackup" initialValue="7" min="1" max="30" 
+                                 prefWidth="80" editable="true"/>
+                        <Label text="días" style="-fx-text-fill: #666;"/>
+                    </HBox>
+
+                    <HBox spacing="15" alignment="CENTER_LEFT">
+                        <Label text="Último backup realizado:" prefWidth="250"/>
+                        <Label fx:id="lblUltimoBackup" text="Nunca" 
+                               style="-fx-text-fill: #666;"/>
+                    </HBox>
+
+                    <HBox spacing="15" alignment="CENTER_LEFT">
+                        <Label text="Ubicación:" prefWidth="250"/>
+                        <Label fx:id="lblUbicacionBackup" text="~/style-stock/backups/" 
+                               style="-fx-text-fill: #666; -fx-font-size: 11px;"/>
+                        <Button text="Abrir Carpeta" onAction="#abrirCarpetaBackup" 
+                                styleClass="button"/>
+                    </HBox>
+
+                    <Separator/>
+
+                    <HBox spacing="10">
+                        <Button text="Realizar Backup Ahora" onAction="#realizarBackupManual"
+                                style="-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-weight: bold;" 
+                                styleClass="button"/>
+                        <Button text="Restaurar desde Backup" onAction="#restaurarBackup"
+                                style="-fx-background-color: #FF9800; -fx-text-fill: white;" 
+                                styleClass="button"/>
+                    </HBox>
+
+                    <Label text="⚠️ IMPORTANTE: Restaurar un backup reemplazará todos los datos actuales" 
+                           style="-fx-text-fill: #FF5722; -fx-font-size: 11px;"/>
+                </VBox>
+
+                <Separator/>
+
+                <Label text="Backups Disponibles:" style="-fx-font-weight: bold;"/>
+                
+                <TableView fx:id="tablaBackups" prefHeight="200">
+                    <columns>
+                        <TableColumn fx:id="colBackupNombre" text="Archivo" prefWidth="300"/>
+                        <TableColumn fx:id="colBackupFecha" text="Fecha" prefWidth="150"/>
+                        <TableColumn fx:id="colBackupTamano" text="Tamaño" prefWidth="100"/>
+                    </columns>
+                </TableView>
+
+                <HBox spacing="10" alignment="CENTER_RIGHT">
+                    <Button text="Eliminar Seleccionado" onAction="#eliminarBackup"
+                            style="-fx-background-color: #f44336; -fx-text-fill: white;" 
+                            styleClass="button"/>
+                </HBox>
+            </VBox>
+        </Tab>
+
+        <!-- TAB: Métodos de Pago -->
+        <Tab text="💳 Métodos de Pago">
+            <VBox spacing="15">
+                <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
+
+                <Label text="Gestión de Métodos de Pago" 
+                       style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
+
+                <!-- Formulario -->
+                <VBox spacing="10" style="-fx-background-color: #F5F5F5; -fx-padding: 15; -fx-background-radius: 5;">
+                    <Label text="Nuevo / Editar Método de Pago" style="-fx-font-weight: bold;"/>
+
+                    <HBox spacing="15" alignment="CENTER_LEFT">
+                        <Label text="Nombre:" prefWidth="120"/>
+                        <TextField fx:id="txtNombreMetodo" promptText="Ej: Efectivo, Tarjeta..." 
+                                   prefWidth="200"/>
+                    </HBox>
+
+                    <HBox spacing="15" alignment="CENTER_LEFT">
+                        <Label text="Comisión (%):" prefWidth="120"/>
+                        <TextField fx:id="txtComisionMetodo" text="0" prefWidth="80"/>
+                        <CheckBox fx:id="chkRequiereCuotas" text="Permite cuotas"/>
+                    </HBox>
+
+                    <HBox spacing="10" alignment="CENTER_RIGHT">
+                        <Button text="Nuevo" onAction="#nuevoMetodoPago" styleClass="button"/>
+                        <Button text="Guardar" onAction="#guardarMetodoPago"
+                                style="-fx-background-color: #4CAF50; -fx-text-fill: white;" 
+                                styleClass="button"/>
+                    </HBox>
+                </VBox>
+
+                <!-- Tabla -->
+                <TableView fx:id="tablaMetodosPago" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="colMetodoId" text="ID" prefWidth="50"/>
+                        <TableColumn fx:id="colMetodoNombre" text="Nombre" prefWidth="200"/>
+                        <TableColumn fx:id="colMetodoComision" text="Comisión %" prefWidth="100"/>
+                        <TableColumn fx:id="colMetodoCuotas" text="Cuotas" prefWidth="80"/>
+                        <TableColumn fx:id="colMetodoActivo" text="Activo" prefWidth="80"/>
+                    </columns>
+                </TableView>
+
+                <HBox spacing="10" alignment="CENTER_RIGHT">
+                    <Button text="Editar" onAction="#editarMetodoPago" styleClass="button"/>
+                    <Button text="Desactivar" onAction="#desactivarMetodoPago"
+                            style="-fx-background-color: #FF9800; -fx-text-fill: white;" 
+                            styleClass="button"/>
+                </HBox>
+            </VBox>
+        </Tab>
+
+        <!-- TAB: Avanzado -->
+        <Tab text="⚙️ Avanzado">
+            <ScrollPane fitToWidth="true">
+                <VBox spacing="20">
+                    <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
+
+                    <Label text="Configuración Avanzada" 
+                           style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
+
+                    <!-- Base de Datos -->
+                    <VBox spacing="10" style="-fx-background-color: #F5F5F5; -fx-padding: 15; -fx-background-radius: 5;">
+                        <Label text="Base de Datos" style="-fx-font-weight: bold;"/>
+                        
+                        <HBox spacing="15" alignment="CENTER_LEFT">
+                            <Label text="Ubicación:" prefWidth="150"/>
+                            <Label fx:id="lblUbicacionDB" text="~/style-stock/style_stock.db" 
+                                   style="-fx-text-fill: #666; -fx-font-size: 11px;"/>
+                        </HBox>
+
+                        <HBox spacing="15" alignment="CENTER_LEFT">
+                            <Label text="Tamaño:" prefWidth="150"/>
+                            <Label fx:id="lblTamanoDB" text="Calculando..." 
+                                   style="-fx-text-fill: #666;"/>
+                        </HBox>
+
+                        <HBox spacing="10">
+                            <Button text="Optimizar Base de Datos" onAction="#optimizarBD"
+                                    styleClass="button"/>
+                            <Button text="Verificar Integridad" onAction="#verificarIntegridad"
+                                    styleClass="button"/>
+                        </HBox>
+                    </VBox>
+
+                    <!-- Logs -->
+                    <VBox spacing="10" style="-fx-background-color: #F5F5F5; -fx-padding: 15; -fx-background-radius: 5;">
+                        <Label text="Logs del Sistema" style="-fx-font-weight: bold;"/>
+                        
+                        <HBox spacing="15" alignment="CENTER_LEFT">
+                            <Label text="Ubicación:" prefWidth="150"/>
+                            <Label fx:id="lblUbicacionLogs" text="~/style-stock/logs/" 
+                                   style="-fx-text-fill: #666; -fx-font-size: 11px;"/>
+                            <Button text="Abrir Carpeta" onAction="#abrirCarpetaLogs" 
+                                    styleClass="button"/>
+                        </HBox>
+
+                        <HBox spacing="10">
+                            <Button text="Ver Logs" onAction="#verLogs" styleClass="button"/>
+                            <Button text="Limpiar Logs Antiguos" onAction="#limpiarLogs"
+                                    style="-fx-background-color: #FF9800; -fx-text-fill: white;" 
+                                    styleClass="button"/>
+                        </HBox>
+                    </VBox>
+
+                    <!-- Información del Sistema -->
+                    <VBox spacing="10" style="-fx-background-color: #E3F2FD; -fx-padding: 15; -fx-background-radius: 5;">
+                        <Label text="Información del Sistema" style="-fx-font-weight: bold;"/>
+                        
+                        <GridPane hgap="15" vgap="8">
+                            <Label text="Versión:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                            <Label text="StyleStock v2.0.0" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+
+                            <Label text="Java Version:" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                            <Label fx:id="lblJavaVersion" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+
+                            <Label text="JavaFX Version:" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+                            <Label fx:id="lblJavaFXVersion" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+
+                            <Label text="Sistema Operativo:" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+                            <Label fx:id="lblSistemaOperativo" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+                        </GridPane>
+                    </VBox>
+
+                    <!-- Zona de Peligro -->
+                    <VBox spacing="10" style="-fx-background-color: #FFEBEE; -fx-padding: 15; -fx-background-radius: 5; -fx-border-color: #F44336; -fx-border-width: 2; -fx-border-radius: 5;">
+                        <Label text="⚠️ ZONA DE PELIGRO" 
+                               style="-fx-font-weight: bold; -fx-text-fill: #D32F2F; -fx-font-size: 14px;"/>
+                        
+                        <Label text="Estas acciones son IRREVERSIBLES y pueden causar pérdida de datos" 
+                               style="-fx-text-fill: #D32F2F;"/>
+
+                        <HBox spacing="10">
+                            <Button text="Resetear Configuración" onAction="#resetearConfiguracion"
+                                    style="-fx-background-color: #FF9800; -fx-text-fill: white;" 
+                                    styleClass="button"/>
+                            <Button text="Limpiar Toda la Base de Datos" onAction="#limpiarBaseDatos"
+                                    style="-fx-background-color: #D32F2F; -fx-text-fill: white; -fx-font-weight: bold;" 
+                                    styleClass="button"/>
+                        </HBox>
+                    </VBox>
+                </VBox>
+            </ScrollPane>
+        </Tab>
+    </TabPane>
+
+    <!-- Barra de Progreso -->
+    <HBox alignment="CENTER" spacing="10">
+        <ProgressIndicator fx:id="progressIndicator" visible="false" prefWidth="30" prefHeight="30"/>
+        <Label fx:id="lblEstado" text="" style="-fx-text-fill: #666;"/>
+    </HBox>
+
+    <!-- Botón Global Guardar -->
+    <HBox alignment="CENTER_RIGHT" spacing="10">
+        <Button text="Guardar Todas las Configuraciones" onAction="#guardarTodo"
+                style="-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-padding: 10 20;" 
+                styleClass="button"/>
+    </HBox>
+</VBox>

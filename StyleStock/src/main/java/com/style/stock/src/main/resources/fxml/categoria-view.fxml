@@ -1,0 +1,308 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<?import java.lang.String?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.style.stock.controller.CategoriaController">
+
+    <top>
+        <VBox spacing="10">
+            <padding><Insets top="15" right="15" bottom="0" left="15"/></padding>
+
+            <HBox alignment="CENTER_LEFT" spacing="10">
+                <Label text="GESTIÓN DE CATEGORÍAS Y ATRIBUTOS"
+                       style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
+            </HBox>
+            <Separator/>
+        </VBox>
+    </top>
+
+    <center>
+        <TabPane tabClosingPolicy="UNAVAILABLE">
+
+            <!-- ============================================ -->
+            <!-- TAB 1: CATEGORÍAS -->
+            <!-- ============================================ -->
+            <Tab text="📂 Categorías">
+                <VBox spacing="10">
+                    <padding><Insets top="10" right="15" bottom="10" left="15"/></padding>
+
+                    <!-- Formulario Categoría -->
+                    <VBox spacing="8" style="-fx-background-color: #F5F5F5; -fx-padding: 10; -fx-background-radius: 5;">
+                        <Label text="Nueva / Editar Categoría" style="-fx-font-weight: bold;"/>
+
+                        <HBox spacing="10" alignment="CENTER_LEFT">
+                            <Label text="Nombre:" prefWidth="80"/>
+                            <TextField fx:id="txtNombreCategoria" promptText="Ej: Ropa, Vapers..."
+                                       prefWidth="250"/>
+                        </HBox>
+
+                        <HBox spacing="10" alignment="CENTER_LEFT">
+                            <Label text="Descripción:" prefWidth="80"/>
+                            <TextField fx:id="txtDescripcionCategoria" promptText="Descripción opcional"
+                                       prefWidth="250"/>
+                        </HBox>
+
+                        <HBox spacing="10" alignment="CENTER_LEFT">
+                            <CheckBox fx:id="chkRequiereVariantes" text="Requiere variantes (combinaciones)"
+                                      selected="true"/>
+                        </HBox>
+
+                        <HBox spacing="10" alignment="CENTER_RIGHT">
+                            <Button text="Nueva" onAction="#nuevaCategoria" styleClass="button"/>
+                            <Button text="Guardar" onAction="#guardarCategoria"
+                                    style="-fx-background-color: #4CAF50; -fx-text-fill: white;"
+                                    styleClass="button"/>
+                            <Button text="Cancelar" onAction="#cancelarCategoria" styleClass="button"/>
+                        </HBox>
+                    </VBox>
+
+                    <!-- Lista de Categorías -->
+                    <Label text="Categorías existentes:"/>
+                    <TableView fx:id="tablaCategorias" VBox.vgrow="ALWAYS">
+                        <columns>
+                            <!--<TableColumn fx:id="colIdCategoria" text="ID" prefWidth="40"/>-->
+                            <TableColumn fx:id="colNombreCategoria" text="Nombre" prefWidth="150"/>
+                            <TableColumn fx:id="colRequiereVar" text="Variantes" prefWidth="80"/>
+                        </columns>
+                    </TableView>
+
+                    <HBox spacing="10" alignment="CENTER_RIGHT">
+                        <Button text="Editar" onAction="#editarCategoria" styleClass="button"/>
+                        <Button text="Eliminar" onAction="#eliminarCategoria"
+                                style="-fx-background-color: #f44336; -fx-text-fill: white;"
+                                styleClass="button"/>
+                    </HBox>
+                </VBox>
+            </Tab>
+
+            <!-- ============================================ -->
+            <!-- TAB 2: ATRIBUTOS CON VALORES -->
+            <!-- ============================================ -->
+            <Tab text="🏷️ Atributos">
+                <SplitPane dividerPositions="0.5">
+
+                    <!-- PANEL IZQUIERDO: Lista de Atributos -->
+                    <VBox spacing="10">
+                        <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
+
+                        <Label text="ATRIBUTOS DISPONIBLES"
+                               style="-fx-font-size: 14px; -fx-font-weight: bold;"/>
+
+                        <!-- Formulario Atributo -->
+                        <VBox spacing="8" style="-fx-background-color: #F5F5F5; -fx-padding: 10; -fx-background-radius: 5;">
+                            <Label text="Nuevo / Editar Atributo" style="-fx-font-weight: bold;"/>
+
+                            <HBox spacing="10" alignment="CENTER_LEFT">
+                                <Label text="Nombre:" prefWidth="80"/>
+                                <TextField fx:id="txtNombreAtributo" promptText="Ej: Talle, Color..."
+                                           prefWidth="150"/>
+                            </HBox>
+
+                            <HBox spacing="10" alignment="CENTER_LEFT">
+                                <Label text="Tipo:" prefWidth="80"/>
+                                <ComboBox fx:id="cbTipoAtributo" prefWidth="150">
+                                    <items>
+                                        <javafx.collections.FXCollections fx:factory="observableArrayList">
+                                            <String fx:value="LISTA"/>
+                                            <String fx:value="COLOR"/>
+                                            <String fx:value="TEXTO"/>
+                                            <String fx:value="NUMERO"/>
+                                        </javafx.collections.FXCollections>
+                                    </items>
+                                </ComboBox>
+                            </HBox>
+
+                            <HBox spacing="10" alignment="CENTER_LEFT">
+                                <Label text="Orden:" prefWidth="80"/>
+                                <TextField fx:id="txtOrdenAtributo" text="0" prefWidth="60"/>
+                            </HBox>
+
+                            <HBox spacing="10" alignment="CENTER_RIGHT">
+                                <Button text="Nuevo" onAction="#nuevoAtributo" styleClass="button"/>
+                                <Button text="Guardar" onAction="#guardarAtributo"
+                                        style="-fx-background-color: #4CAF50; -fx-text-fill: white;"
+                                        styleClass="button"/>
+                            </HBox>
+                        </VBox>
+
+                        <!-- Tabla de Atributos -->
+                        <Label text="Lista de Atributos:"/>
+                        <TableView fx:id="tablaAtributos" VBox.vgrow="ALWAYS">
+                            <columns>
+                                <TableColumn fx:id="colIdAtributo" text="ID" prefWidth="40"/>
+                                <TableColumn fx:id="colNombreAtributo" text="Nombre" prefWidth="120"/>
+                                <TableColumn fx:id="colTipoAtributo" text="Tipo" prefWidth="80"/>
+                                <TableColumn fx:id="colOrdenAtributo" text="Orden" prefWidth="60"/>
+                            </columns>
+                        </TableView>
+
+                        <HBox spacing="10" alignment="CENTER_RIGHT">
+                            <Button text="Editar" onAction="#editarAtributo" styleClass="button"/>
+                            <Button text="Eliminar" onAction="#eliminarAtributo"
+                                    style="-fx-background-color: #f44336; -fx-text-fill: white;"
+                                    styleClass="button"/>
+                        </HBox>
+                    </VBox>
+
+                    <!-- PANEL DERECHO: Valores del Atributo Seleccionado -->
+                    <VBox spacing="10">
+                        <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
+
+                        <Label text="VALORES DEL ATRIBUTO"
+                               style="-fx-font-size: 14px; -fx-font-weight: bold;"/>
+
+                        <Label fx:id="lblAtributoSeleccionado"
+                               text="Seleccione un atributo de tipo LISTA o COLOR"
+                               style="-fx-text-fill: #666; -fx-font-style: italic;"/>
+
+                        <Separator/>
+
+                        <!-- Formulario Agregar Valor -->
+                        <VBox spacing="8" style="-fx-background-color: #E3F2FD; -fx-padding: 10; -fx-background-radius: 5;">
+                            <Label text="Agregar Nuevo Valor" style="-fx-font-weight: bold;"/>
+
+                            <GridPane hgap="10" vgap="8">
+                                <Label text="Valor:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                                <TextField fx:id="txtValor" promptText="Ej: S, M, L..."
+                                           prefWidth="150" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+
+                                <!-- Solo visible para tipo COLOR -->
+                                <Label fx:id="lblCodigoHex" text="Color:"
+                                       GridPane.columnIndex="0" GridPane.rowIndex="1" visible="false"/>
+                                <HBox spacing="5" GridPane.columnIndex="1" GridPane.rowIndex="1"
+                                      fx:id="hboxColor" visible="false">
+                                    <TextField fx:id="txtCodigoHexField" promptText="#FFFFFF" prefWidth="100"/>
+                                    <ColorPicker fx:id="colorPickerControl" prefWidth="50"/>
+                                </HBox>
+
+                                <Label text="Orden:" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+                                <TextField fx:id="txtOrdenValor" text="0" prefWidth="60"
+                                           GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+                            </GridPane>
+
+                            <HBox spacing="10" alignment="CENTER_RIGHT">
+                                <Button text="+ Agregar Valor" onAction="#agregarValor"
+                                        style="-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-weight: bold;"
+                                        styleClass="button"/>
+                                <Button text="Limpiar" onAction="#limpiarFormularioValor" styleClass="button"/>
+                            </HBox>
+                        </VBox>
+
+                        <!-- Tabla de Valores -->
+                        <Label text="Valores Existentes:"/>
+                        <TableView fx:id="tablaValores" VBox.vgrow="ALWAYS">
+                            <columns>
+                                <TableColumn fx:id="colIdValor" text="ID" prefWidth="40"/>
+                                <TableColumn fx:id="colValor" text="Valor" prefWidth="150"/>
+                                <TableColumn fx:id="colCodigoHexValor" text="Color" prefWidth="100"/>
+                                <TableColumn fx:id="colOrdenValor" text="Orden" prefWidth="60"/>
+                                <TableColumn fx:id="colActivoValor" text="Activo" prefWidth="60"/>
+                            </columns>
+                        </TableView>
+
+                        <HBox spacing="10" alignment="CENTER_RIGHT">
+                            <Button text="Editar Valor" onAction="#editarValor" styleClass="button"/>
+                            <Button text="Eliminar Valor" onAction="#eliminarValor"
+                                    style="-fx-background-color: #f44336; -fx-text-fill: white;"
+                                    styleClass="button"/>
+                        </HBox>
+
+                        <!-- Ayuda -->
+                        <VBox style="-fx-background-color: #FFF3E0; -fx-padding: 10; -fx-background-radius: 5;">
+                            <Label text="💡 Tip:" style="-fx-font-weight: bold; -fx-text-fill: #F57C00;"/>
+                            <Label text="• Los valores de tipo LISTA y COLOR se usan para crear variantes"
+                                   style="-fx-text-fill: #666; -fx-font-size: 11px;"/>
+                            <Label text="• Ejemplo: Talle → S, M, L, XL permite crear 4 variantes"
+                                   style="-fx-text-fill: #666; -fx-font-size: 11px;"/>
+                            <Label text="• Los tipos TEXTO y NUMERO no necesitan valores predefinidos"
+                                   style="-fx-text-fill: #666; -fx-font-size: 11px;"/>
+                        </VBox>
+                    </VBox>
+                </SplitPane>
+            </Tab>
+
+            <!-- ============================================ -->
+            <!-- TAB 3: ASIGNACIÓN CATEGORÍA-ATRIBUTOS -->
+            <!-- ============================================ -->
+            <Tab text="🔗 Asignaciones">
+                <VBox spacing="15">
+                    <padding><Insets top="15" right="15" bottom="15" left="15"/></padding>
+
+                    <Label text="ASIGNAR ATRIBUTOS A CATEGORÍAS"
+                           style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
+
+                    <!-- Selector de Categoría -->
+                    <HBox spacing="15" alignment="CENTER_LEFT"
+                          style="-fx-background-color: #F5F5F5; -fx-padding: 15; -fx-background-radius: 5;">
+                        <Label text="Categoría:" style="-fx-font-weight: bold;" prefWidth="100"/>
+                        <ComboBox fx:id="cbCategoriaAsignar" promptText="Seleccione categoría"
+                                  prefWidth="300" onAction="#cargarAtributosCategoria"/>
+                        <Button text="🔄 Recargar" onAction="#cargarAtributosCategoria" styleClass="button"/>
+                    </HBox>
+
+                    <Separator/>
+
+                    <!-- Asignar Nuevo Atributo -->
+                    <VBox spacing="10" style="-fx-background-color: #E8F5E9; -fx-padding: 15; -fx-background-radius: 5;">
+                        <Label text="Agregar Atributo a la Categoría"
+                               style="-fx-font-weight: bold; -fx-font-size: 14px;"/>
+
+                        <GridPane hgap="15" vgap="10">
+                            <Label text="Atributo:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                            <ComboBox fx:id="cbAtributoAsignar" promptText="Seleccione atributo"
+                                      prefWidth="250" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+
+                            <CheckBox fx:id="chkRequerido" text="Requerido" selected="true"
+                                      GridPane.columnIndex="2" GridPane.rowIndex="0"/>
+
+                            <Label text="Orden:" GridPane.columnIndex="3" GridPane.rowIndex="0"/>
+                            <TextField fx:id="txtOrdenAsignacion" text="0" prefWidth="60"
+                                       GridPane.columnIndex="4" GridPane.rowIndex="0"/>
+
+                            <Button text="✓ Asignar a Categoría" onAction="#asignarAtributo"
+                                    style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold;"
+                                    styleClass="button"
+                                    GridPane.columnIndex="5" GridPane.rowIndex="0"/>
+                        </GridPane>
+                    </VBox>
+
+                    <!-- Lista de Atributos Asignados -->
+                    <Label text="Atributos Asignados a la Categoría Seleccionada:"
+                           style="-fx-font-weight: bold;"/>
+
+                    <ListView fx:id="lvAtributosAsignados" VBox.vgrow="ALWAYS" prefHeight="300"/>
+
+                    <HBox spacing="10" alignment="CENTER_RIGHT">
+                        <Button text="Quitar Seleccionado" onAction="#quitarAtributo"
+                                style="-fx-background-color: #f44336; -fx-text-fill: white;"
+                                styleClass="button"/>
+                    </HBox>
+
+                    <!-- Info Box -->
+                    <VBox style="-fx-background-color: #E3F2FD; -fx-padding: 15; -fx-background-radius: 5;">
+                        <Label text="ℹ️ Información Importante"
+                               style="-fx-font-weight: bold; -fx-text-fill: #1976D2;"/>
+                        <Label text="• Los atributos asignados definen las características de las variantes de productos"
+                               style="-fx-text-fill: #666; -fx-font-size: 11px;"/>
+                        <Label text="• Ejemplo: Si asignas 'Talle' y 'Color' a 'Ropa', cada producto podrá tener variantes con esos atributos"
+                               style="-fx-text-fill: #666; -fx-font-size: 11px;"/>
+                        <Label text="• Los atributos 'requeridos' DEBEN completarse al crear una variante"
+                               style="-fx-text-fill: #666; -fx-font-size: 11px;"/>
+                    </VBox>
+                </VBox>
+            </Tab>
+        </TabPane>
+    </center>
+
+    <bottom>
+        <HBox alignment="CENTER" spacing="10" style="-fx-padding: 10;">
+            <ProgressIndicator fx:id="progressIndicator" visible="false" prefWidth="30" prefHeight="30"/>
+            <Pane HBox.hgrow="ALWAYS"/>
+            <Label text="💾 Los cambios se guardan automáticamente"
+                   style="-fx-text-fill: #666; -fx-font-size: 11px;"/>
+        </HBox>
+    </bottom>
+</BorderPane>
