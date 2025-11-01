@@ -1,6 +1,3 @@
-// ============================================
-// MainController.java
-// ============================================
 package com.style.stock.controller;
 
 import com.style.stock.util.AppConfig;
@@ -32,18 +29,18 @@ public class MainController {
         themeChoice.getItems().addAll("Light", "Dark");
         String t = AppConfig.get("theme", "light");
         themeChoice.setValue(t.equals("dark") ? "Dark" : "Light");
-        
+
         themeChoice.getSelectionModel().selectedItemProperty().addListener((obs, oldV, newV) -> {
             String theme = newV.equals("Dark") ? "dark" : "light";
             AppConfig.set("theme", theme);
-            
+
             Stage stage = (Stage) themeChoice.getScene().getWindow();
             Scene scene = stage.getScene();
             scene.getStylesheets().clear();
-            
+
             String cssFile = theme.equals("dark") ? "/css/dark.css" : "/css/light.css";
             scene.getStylesheets().add(getClass().getResource(cssFile).toExternalForm());
-            
+
             logger.info("Tema cambiado a: {}", theme);
         });
     }
@@ -58,19 +55,26 @@ public class MainController {
         loadView("/fxml/cliente-view.fxml");
     }
 
+    // ============================================
+    // CAMBIADO: Ahora carga la vista UNIFICADA
+    // ============================================
     @FXML
     private void showProductos() throws IOException {
-        loadView("/fxml/producto-view.fxml");
+        loadView("/fxml/producto-variante-unificado.fxml");
     }
 
+    // ============================================
+    // ELIMINADO: Ya no existe vista separada de variantes
+    // Este método ahora hace lo mismo que showProductos
+    // ============================================
     @FXML
     private void showVariantes() throws IOException {
-        loadView("/fxml/variante-view.fxml");
+        loadView("/fxml/producto-variante-unificado.fxml");
     }
 
     @FXML
     private void showCategorias() throws IOException {
-        loadView("/fxml/categoria-view.fxml");
+        loadView("/fxml/categoria-view-mejorado.fxml"); // CAMBIADO: Vista mejorada
     }
 
     @FXML

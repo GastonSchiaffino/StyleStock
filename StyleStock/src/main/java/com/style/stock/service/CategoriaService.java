@@ -55,6 +55,11 @@ public class CategoriaService {
         logger.info("Categoría eliminada: {}", id);
     }
 
+    public Categoria buscarPorId(Integer id) throws NotFoundException, DataAccessException {
+        return categoriaDAO.findById(id)
+                .orElseThrow(() -> new NotFoundException("Categoria", id));
+    }
+
     public List<Categoria> listarTodas() throws DataAccessException {
         return categoriaDAO.findAll(true);
     }

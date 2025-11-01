@@ -9,8 +9,11 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.geometry.Orientation;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,6 +31,7 @@ public class VentaController {
     private final VentaService ventaService;
     private final ClienteService clienteService;
     private final VarianteService varianteService;
+    private final ProductoService productoService;
     private final MetodoPagoService metodoPagoService;
     private final TipoClienteService tipoClienteService;
 
@@ -85,6 +89,7 @@ public class VentaController {
         this.ventaService = new VentaService();
         this.clienteService = new ClienteService();
         this.varianteService = new VarianteService();
+        this.productoService = new ProductoService();
         this.metodoPagoService = new MetodoPagoService();
         this.tipoClienteService = new TipoClienteService();
 
@@ -101,6 +106,7 @@ public class VentaController {
         configurarCombos();
         configurarEventos();
         cargarDatosIniciales();
+        configurarListaVariantes();
         nuevaVenta();
     }
 
@@ -229,6 +235,85 @@ public class VentaController {
         });
     }
 
+    private void configurarListaVariantes() {
+        // Configurar CellFactory personalizado para mostrar info completa
+        lvVariantes.setCellFactory(lv -> new ListCell<Variante>() {
+            @Override
+            protected void updateItem(Variante variante, boolean empty) {
+                super.updateItem(variante, empty);
+
+                if (empty || variante == null) {
+                    setText(null);
+                    setGraphic(null);
+                    setStyle("");
+                } else {
+                    // Crear layout visual rico
+                    VBox container = new VBox(5);
+                    container.setStyle("-fx-padding: 8; -fx-background-radius: 5;");
+
+                    // Línea 1: SKU + Producto
+                    HBox linea1 = new HBox(10);
+                    Label lblSku = new Label(variante.getSku());
+                    lblSku.setStyle("-fx-font-weight: bold; -fx-font-size: 13px;");
+
+                    Label lblProducto = new Label(variante.getProducto() != null ?
+                            variante.getProducto().getNombre() : "");
+                    lblProducto.setStyle("-fx-text-fill: #666;");
+
+                    linea1.getChildren().addAll(lblSku, new Label("-"), lblProducto);
+
+                    // Línea 2: Atributos
+                    HBox linea2 = new HBox(8);
+                    if (variante.getAtributos() != null && !variante.getAtributos().isEmpty()) {
+                        for (VarianteAtributo va : variante.getAtributos()) {
+                            Label lblAttr = new Label(va.getValor());
+                            lblAttr.setStyle(
+                                    "-fx-background-color: #E3F2FD; " +
+                                            "-fx-padding: 2 8; " +
+                                            "-fx-background-radius: 10; " +
+                                            "-fx-font-size: 11px; " +
+                                            "-fx-text-fill: #1976D2;"
+                            );
+                            linea2.getChildren().add(lblAttr);
+                        }
+                    }
+
+                    // Línea 3: Precios y Stock
+                    HBox linea3 = new HBox(15);
+
+                    Label lblPrecio = new Label(String.format("💰 $%.2f",
+                            variante.getPrecioMinorista()));
+                    lblPrecio.setStyle("-fx-font-weight: bold; -fx-text-fill: #2E7D32;");
+
+                    Label lblStock = new Label(String.format("📦 Stock: %d",
+                            variante.getStock()));
+                    lblStock.setStyle(variante.isStockBajo() ?
+                            "-fx-text-fill: #D32F2F; -fx-font-weight: bold;" :
+                            "-fx-text-fill: #666;");
+
+                    linea3.getChildren().addAll(lblPrecio, new Separator(Orientation.VERTICAL), lblStock);
+
+                    container.getChildren().addAll(linea1, linea2, linea3);
+
+                    // Highlight si stock bajo
+                    if (variante.isStockBajo()) {
+                        container.setStyle(
+                                "-fx-padding: 8; " +
+                                        "-fx-background-color: #FFEBEE; " +
+                                        "-fx-border-color: #F44336; " +
+                                        "-fx-border-width: 1; " +
+                                        "-fx-background-radius: 5; " +
+                                        "-fx-border-radius: 5;"
+                        );
+                    }
+
+                    setGraphic(container);
+                    setText(null);
+                }
+            }
+        });
+    }
+
     private void cargarDatosIniciales() {
         ejecutarEnBackground(() -> {
             try {
@@ -256,11 +341,29 @@ public class VentaController {
      */
     @FXML
     private void buscarVariantes(String termino) {
+        if (termino == null || termino.trim().isEmpty()) {
+            variantesDisponibles.clear();
+            return;
+        }
+
         ejecutarEnBackground(() -> {
             try {
-                // Buscar variantes por SKU o descripción
                 List<Variante> resultado = varianteService.buscarPorTexto(termino);
+
+                // IMPORTANTE: Cargar el producto completo para cada variante
+                for (Variante v : resultado) {
+                    if (v.getProductoId() != null) {
+                        try {
+                            Producto producto = productoService.buscarPorId(v.getProductoId());
+                            v.setProducto(producto);
+                        } catch (NotFoundException e) {
+                            logger.warn("Producto no encontrado para variante: {}", v.getSku());
+                        }
+                    }
+                }
+
                 Platform.runLater(() -> variantesDisponibles.setAll(resultado));
+
             } catch (DataAccessException e) {
                 logger.error("Error buscando variantes", e);
             }

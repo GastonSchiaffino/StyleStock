@@ -44,9 +44,7 @@
             <!-- INVENTARIO -->
             <TitledPane text="📦 INVENTARIO" expanded="false" styleClass="menu-group">
                 <VBox spacing="3">
-                    <Button text="Productos" onAction="#showProductos" 
-                            styleClass="submenu-button" maxWidth="Infinity"/>
-                    <Button text="Variantes y Stock" onAction="#showVariantes" 
+                    <Button text="Productos y Variantes" onAction="#showProductos"
                             styleClass="submenu-button" maxWidth="Infinity"/>
                     <Button text="Stock Bajo" styleClass="submenu-button" maxWidth="Infinity"/>
                     <Button text="Categorías" onAction="#showCategorias" 

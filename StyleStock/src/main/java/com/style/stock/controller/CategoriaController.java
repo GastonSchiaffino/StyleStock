@@ -10,13 +10,19 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.HBox;
+import javafx.scene.paint.Color;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
 
 /**
- * Controlador COMPLETO para gestión de categorías y atributos
+ * Controlador COMPLETO Y MEJORADO para gestión de:
+ * - Categorías
+ * - Atributos
+ * - Valores de Atributos (integrado en la misma vista)
+ * - Asignación Categoría-Atributos
  */
 public class CategoriaController {
     private static final Logger logger = LoggerFactory.getLogger(CategoriaController.class);
@@ -26,16 +32,16 @@ public class CategoriaController {
     private final AtributoService atributoService;
     private final ValorAtributoService valorAtributoService;
 
-    // Componentes UI - Categorías
+    // ========== TAB 1: CATEGORÍAS ==========
     @FXML private TextField txtNombreCategoria;
     @FXML private TextField txtDescripcionCategoria;
     @FXML private CheckBox chkRequiereVariantes;
     @FXML private TableView<Categoria> tablaCategorias;
-    @FXML private TableColumn<Categoria, Integer> colIdCategoria;
+    //@FXML private TableColumn<Categoria, Integer> colIdCategoria;
     @FXML private TableColumn<Categoria, String> colNombreCategoria;
     @FXML private TableColumn<Categoria, Boolean> colRequiereVar;
 
-    // Componentes UI - Atributos
+    // ========== TAB 2: ATRIBUTOS ==========
     @FXML private TextField txtNombreAtributo;
     @FXML private ComboBox<String> cbTipoAtributo;
     @FXML private TextField txtOrdenAtributo;
@@ -45,7 +51,22 @@ public class CategoriaController {
     @FXML private TableColumn<Atributo, String> colTipoAtributo;
     @FXML private TableColumn<Atributo, Integer> colOrdenAtributo;
 
-    // Componentes UI - Asignación
+    // ========== TAB 2: VALORES DE ATRIBUTOS (NUEVO) ==========
+    @FXML private Label lblAtributoSeleccionado;
+    @FXML private TextField txtValor;
+    @FXML private TextField txtCodigoHexField;
+    @FXML private ColorPicker colorPickerControl;
+    @FXML private TextField txtOrdenValor;
+    @FXML private Label lblCodigoHex;
+    @FXML private HBox hboxColor;
+    @FXML private TableView<ValorAtributo> tablaValores;
+    @FXML private TableColumn<ValorAtributo, Integer> colIdValor;
+    @FXML private TableColumn<ValorAtributo, String> colValor;
+    @FXML private TableColumn<ValorAtributo, String> colCodigoHexValor;
+    @FXML private TableColumn<ValorAtributo, Integer> colOrdenValor;
+    @FXML private TableColumn<ValorAtributo, Boolean> colActivoValor;
+
+    // ========== TAB 3: ASIGNACIÓN ==========
     @FXML private ComboBox<Categoria> cbCategoriaAsignar;
     @FXML private ComboBox<Atributo> cbAtributoAsignar;
     @FXML private CheckBox chkRequerido;
@@ -57,9 +78,12 @@ public class CategoriaController {
     // Datos
     private final ObservableList<Categoria> categorias;
     private final ObservableList<Atributo> atributos;
+    private final ObservableList<ValorAtributo> valoresAtributo;
     private final ObservableList<AtributoAsignado> atributosAsignados;
+
     private Categoria categoriaSeleccionada;
     private Atributo atributoSeleccionado;
+    private ValorAtributo valorSeleccionado;
 
     public CategoriaController() {
         this.categoriaService = new CategoriaService();
@@ -67,6 +91,7 @@ public class CategoriaController {
         this.valorAtributoService = new ValorAtributoService();
         this.categorias = FXCollections.observableArrayList();
         this.atributos = FXCollections.observableArrayList();
+        this.valoresAtributo = FXCollections.observableArrayList();
         this.atributosAsignados = FXCollections.observableArrayList();
     }
 
@@ -78,13 +103,13 @@ public class CategoriaController {
     }
 
     private void configurarTablas() {
-        // Tabla Categorías
-        colIdCategoria.setCellValueFactory(new PropertyValueFactory<>("id"));
+        // ========== TABLA CATEGORÍAS ==========
+        //colIdCategoria.setCellValueFactory(new PropertyValueFactory<>("id"));
         colNombreCategoria.setCellValueFactory(new PropertyValueFactory<>("nombre"));
         colRequiereVar.setCellValueFactory(new PropertyValueFactory<>("requiereVariantes"));
         tablaCategorias.setItems(categorias);
 
-        // Tabla Atributos
+        // ========== TABLA ATRIBUTOS ==========
         colIdAtributo.setCellValueFactory(new PropertyValueFactory<>("id"));
         colNombreAtributo.setCellValueFactory(new PropertyValueFactory<>("nombre"));
         colTipoAtributo.setCellValueFactory(cellData ->
@@ -95,7 +120,32 @@ public class CategoriaController {
         colOrdenAtributo.setCellValueFactory(new PropertyValueFactory<>("orden"));
         tablaAtributos.setItems(atributos);
 
-        // ListView de atributos asignados
+        // ========== TABLA VALORES (NUEVO) ==========
+        colIdValor.setCellValueFactory(new PropertyValueFactory<>("id"));
+        colValor.setCellValueFactory(new PropertyValueFactory<>("valor"));
+        colCodigoHexValor.setCellValueFactory(new PropertyValueFactory<>("codigoHex"));
+        colOrdenValor.setCellValueFactory(new PropertyValueFactory<>("orden"));
+        colActivoValor.setCellValueFactory(new PropertyValueFactory<>("activo"));
+
+        // Columna con preview de color
+        colCodigoHexValor.setCellFactory(col -> new TableCell<ValorAtributo, String>() {
+            @Override
+            protected void updateItem(String codigoHex, boolean empty) {
+                super.updateItem(codigoHex, empty);
+                if (empty || codigoHex == null || codigoHex.isEmpty()) {
+                    setText(null);
+                    setGraphic(null);
+                    setStyle("");
+                } else {
+                    setText(codigoHex);
+                    setStyle("-fx-background-color: " + codigoHex + "; -fx-text-fill: white; -fx-font-weight: bold;");
+                }
+            }
+        });
+
+        tablaValores.setItems(valoresAtributo);
+
+        // ========== LISTVIEW ASIGNACIÓN ==========
         lvAtributosAsignados.setItems(atributosAsignados);
         lvAtributosAsignados.setCellFactory(lv -> new ListCell<AtributoAsignado>() {
             @Override
@@ -116,26 +166,67 @@ public class CategoriaController {
     }
 
     private void configurarEventos() {
+        // Selección de categoría
         tablaCategorias.getSelectionModel().selectedItemProperty().addListener(
                 (obs, oldVal, newVal) -> {
                     categoriaSeleccionada = newVal;
+                }
+        );
+
+        // Selección de atributo
+        tablaAtributos.getSelectionModel().selectedItemProperty().addListener(
+                (obs, oldVal, newVal) -> {
+                    atributoSeleccionado = newVal;
                     if (newVal != null) {
-                        cargarAtributosAsignados(newVal.getId());
+                        cargarValoresAtributo(newVal);
+                        actualizarVisibilidadCamposColor(newVal.getTipo());
+                    } else {
+                        valoresAtributo.clear();
+                        lblAtributoSeleccionado.setText("Seleccione un atributo de tipo LISTA o COLOR");
                     }
                 }
         );
 
-        tablaAtributos.getSelectionModel().selectedItemProperty().addListener(
-                (obs, oldVal, newVal) -> atributoSeleccionado = newVal
+        // Selección de valor
+        tablaValores.getSelectionModel().selectedItemProperty().addListener(
+                (obs, oldVal, newVal) -> valorSeleccionado = newVal
         );
 
+        // Validación numérica
         txtOrdenAtributo.textProperty().addListener((obs, o, n) -> {
             if (!n.matches("\\d*")) txtOrdenAtributo.setText(o);
+        });
+
+        txtOrdenValor.textProperty().addListener((obs, o, n) -> {
+            if (!n.matches("\\d*")) txtOrdenValor.setText(o);
         });
 
         if (txtOrdenAsignacion != null) {
             txtOrdenAsignacion.textProperty().addListener((obs, o, n) -> {
                 if (!n.matches("\\d*")) txtOrdenAsignacion.setText(o);
+            });
+        }
+
+        // Sincronizar ColorPicker con TextField
+        if (colorPickerControl != null && txtCodigoHexField != null) {
+            colorPickerControl.valueProperty().addListener((obs, oldVal, newVal) -> {
+                if (newVal != null) {
+                    String hex = String.format("#%02X%02X%02X",
+                            (int) (newVal.getRed() * 255),
+                            (int) (newVal.getGreen() * 255),
+                            (int) (newVal.getBlue() * 255));
+                    txtCodigoHexField.setText(hex);
+                }
+            });
+
+            txtCodigoHexField.textProperty().addListener((obs, oldVal, newVal) -> {
+                if (newVal != null && newVal.matches("#[0-9A-Fa-f]{6}")) {
+                    try {
+                        colorPickerControl.setValue(Color.web(newVal));
+                    } catch (Exception e) {
+                        logger.debug("Color inválido: {}", newVal);
+                    }
+                }
             });
         }
     }
@@ -162,7 +253,9 @@ public class CategoriaController {
         });
     }
 
-    // ========== CATEGORÍAS ==========
+    // ============================================
+    // CATEGORÍAS
+    // ============================================
 
     @FXML
     private void nuevaCategoria() {
@@ -272,7 +365,9 @@ public class CategoriaController {
         nuevaCategoria();
     }
 
-    // ========== ATRIBUTOS ==========
+    // ============================================
+    // ATRIBUTOS
+    // ============================================
 
     @FXML
     private void nuevoAtributo() {
@@ -280,6 +375,8 @@ public class CategoriaController {
         cbTipoAtributo.setValue("LISTA");
         txtOrdenAtributo.setText("0");
         atributoSeleccionado = null;
+        valoresAtributo.clear();
+        lblAtributoSeleccionado.setText("Seleccione un atributo de tipo LISTA o COLOR");
         txtNombreAtributo.requestFocus();
     }
 
@@ -375,10 +472,50 @@ public class CategoriaController {
         }
     }
 
+    // ============================================
+    // VALORES DE ATRIBUTOS (NUEVO)
+    // ============================================
+
+    private void cargarValoresAtributo(Atributo atributo) {
+        if (atributo == null) {
+            valoresAtributo.clear();
+            return;
+        }
+
+        // Solo mostrar valores para LISTA y COLOR
+        if (atributo.getTipo() != Atributo.TipoAtributo.LISTA &&
+                atributo.getTipo() != Atributo.TipoAtributo.COLOR) {
+            valoresAtributo.clear();
+            lblAtributoSeleccionado.setText(
+                    "Los atributos tipo " + atributo.getTipo().getValor() + " no necesitan valores predefinidos"
+            );
+            return;
+        }
+
+        lblAtributoSeleccionado.setText(
+                "Valores de: " + atributo.getNombre() + " (" + atributo.getTipo().getValor() + ")"
+        );
+
+        ejecutarEnBackground(() -> {
+            try {
+                var valores = valorAtributoService.listarPorAtributo(atributo.getId());
+                Platform.runLater(() -> valoresAtributo.setAll(valores));
+            } catch (DataAccessException e) {
+                logger.error("Error cargando valores", e);
+            }
+        });
+    }
+
+    private void actualizarVisibilidadCamposColor(Atributo.TipoAtributo tipo) {
+        boolean esColor = tipo == Atributo.TipoAtributo.COLOR;
+        if (lblCodigoHex != null) lblCodigoHex.setVisible(esColor);
+        if (hboxColor != null) hboxColor.setVisible(esColor);
+    }
+
     @FXML
-    private void gestionarValores() {
+    private void agregarValor() {
         if (atributoSeleccionado == null) {
-            AlertUtils.mostrarAdvertencia("Selección requerida", "Seleccione un atributo");
+            AlertUtils.mostrarAdvertencia("Atributo requerido", "Seleccione un atributo primero");
             return;
         }
 
@@ -389,38 +526,108 @@ public class CategoriaController {
             return;
         }
 
-        TextInputDialog dialog = new TextInputDialog();
-        dialog.setTitle("Agregar Valor");
-        dialog.setHeaderText("Agregar valor para: " + atributoSeleccionado.getNombre());
-        dialog.setContentText("Valor:");
+        String valor = txtValor.getText().trim();
+        if (valor.isEmpty()) {
+            AlertUtils.mostrarAdvertencia("Validación", "El valor es obligatorio");
+            return;
+        }
 
-        Optional<String> result = dialog.showAndWait();
-        result.ifPresent(valor -> {
-            ejecutarEnBackground(() -> {
-                try {
-                    ValorAtributo va = new ValorAtributo();
-                    va.setAtributoId(atributoSeleccionado.getId());
-                    va.setValor(valor.trim());
-                    valorAtributoService.crear(va);
+        ejecutarEnBackground(() -> {
+            try {
+                ValorAtributo va = new ValorAtributo();
+                va.setAtributoId(atributoSeleccionado.getId());
+                va.setValor(valor);
 
-                    Platform.runLater(() ->
-                            AlertUtils.mostrarExito("Éxito", "Valor agregado correctamente")
-                    );
-                } catch (ValidationException e) {
-                    Platform.runLater(() ->
-                            AlertUtils.mostrarAdvertencia("Validación", e.getMessage())
-                    );
-                } catch (DataAccessException e) {
-                    logger.error("Error guardando valor", e);
-                    Platform.runLater(() ->
-                            AlertUtils.mostrarError("Error", "No se pudo guardar el valor")
-                    );
+                if (atributoSeleccionado.getTipo() == Atributo.TipoAtributo.COLOR &&
+                        txtCodigoHexField != null && !txtCodigoHexField.getText().trim().isEmpty()) {
+                    va.setCodigoHex(txtCodigoHexField.getText().trim());
                 }
-            });
+
+                va.setOrden(Integer.parseInt(txtOrdenValor.getText().trim()));
+
+                valorAtributoService.crear(va);
+
+                Platform.runLater(() -> {
+                    AlertUtils.mostrarExito("Éxito", "Valor agregado correctamente");
+                    cargarValoresAtributo(atributoSeleccionado);
+                    limpiarFormularioValor();
+                });
+
+            } catch (ValidationException e) {
+                Platform.runLater(() ->
+                        AlertUtils.mostrarAdvertencia("Validación", e.getMessage())
+                );
+            } catch (DataAccessException e) {
+                logger.error("Error guardando valor", e);
+                Platform.runLater(() ->
+                        AlertUtils.mostrarError("Error", "No se pudo guardar el valor")
+                );
+            }
         });
     }
 
-    // ========== ASIGNACIÓN ==========
+    @FXML
+    private void editarValor() {
+        if (valorSeleccionado == null) {
+            AlertUtils.mostrarAdvertencia("Selección requerida", "Seleccione un valor");
+            return;
+        }
+
+        txtValor.setText(valorSeleccionado.getValor());
+        txtOrdenValor.setText(String.valueOf(valorSeleccionado.getOrden()));
+
+        if (atributoSeleccionado != null &&
+                atributoSeleccionado.getTipo() == Atributo.TipoAtributo.COLOR &&
+                valorSeleccionado.getCodigoHex() != null) {
+            txtCodigoHexField.setText(valorSeleccionado.getCodigoHex());
+        }
+    }
+
+    @FXML
+    private void eliminarValor() {
+        if (valorSeleccionado == null) {
+            AlertUtils.mostrarAdvertencia("Selección requerida", "Seleccione un valor");
+            return;
+        }
+
+        Optional<ButtonType> result = AlertUtils.mostrarConfirmacion(
+                "Confirmar eliminación",
+                "¿Eliminar el valor?",
+                valorSeleccionado.getValor()
+        );
+
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            ejecutarEnBackground(() -> {
+                try {
+                    valorAtributoService.eliminar(valorSeleccionado.getId());
+                    Platform.runLater(() -> {
+                        AlertUtils.mostrarExito("Éxito", "Valor eliminado");
+                        cargarValoresAtributo(atributoSeleccionado);
+                        limpiarFormularioValor();
+                    });
+                } catch (DataAccessException | NotFoundException e) {
+                    logger.error("Error eliminando valor", e);
+                    Platform.runLater(() ->
+                            AlertUtils.mostrarError("Error", "No se pudo eliminar el valor")
+                    );
+                }
+            });
+        }
+    }
+
+    @FXML
+    private void limpiarFormularioValor() {
+        txtValor.clear();
+        if (txtCodigoHexField != null) txtCodigoHexField.clear();
+        txtOrdenValor.setText("0");
+        if (colorPickerControl != null) colorPickerControl.setValue(Color.WHITE);
+        valorSeleccionado = null;
+        tablaValores.getSelectionModel().clearSelection();
+    }
+
+    // ============================================
+    // ASIGNACIÓN CATEGORÍA-ATRIBUTOS
+    // ============================================
 
     @FXML
     private void cargarAtributosCategoria() {
@@ -532,6 +739,10 @@ public class CategoriaController {
         }
     }
 
+    // ============================================
+    // UTILIDADES
+    // ============================================
+
     private void ejecutarEnBackground(Runnable tarea) {
         progressIndicator.setVisible(true);
         new Thread(() -> {
@@ -543,7 +754,10 @@ public class CategoriaController {
         }).start();
     }
 
-    // Clase auxiliar
+    // ============================================
+    // CLASE AUXILIAR
+    // ============================================
+
     private static class AtributoAsignado {
         final Atributo atributo;
         final boolean requerido;
