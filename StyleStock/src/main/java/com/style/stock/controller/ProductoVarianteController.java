@@ -1029,8 +1029,9 @@ public class ProductoVarianteController {
 
                         if (variante == null) {
                             v.setSku(txtSku.getText().trim());
+                            v.setProductoId(productoSeleccionado.getId());
                         }
-                        v.setProductoId(productoSeleccionado.getId());
+
                         v.setCodigoBarras(txtCodigoBarras.getText().trim());
                         v.setPrecioCosto(Double.parseDouble(txtPrecioCosto.getText().trim()));
                         v.setPrecioMinorista(Double.parseDouble(txtPrecioMin.getText().trim()));
@@ -1060,11 +1061,11 @@ public class ProductoVarianteController {
                                         cargarVariantesDelProducto(productoSeleccionado);
                                     });
                                 } else {
-                                    // Actualización en desarrollo
-                                    Platform.runLater(() ->
-                                            AlertUtils.mostrarAdvertencia("En desarrollo",
-                                                    "La actualización de variantes estará disponible próximamente")
-                                    );
+                                    varianteService.actualizar(v);
+                                    Platform.runLater(() -> {
+                                        AlertUtils.mostrarExito("Éxito", "Variante actualizada correctamente");
+                                        cargarVariantesDelProducto(productoSeleccionado);
+                                    });
                                 }
                             } catch (Exception e) {
                                 logger.error("Error guardando variante", e);
@@ -1101,8 +1102,30 @@ public class ProductoVarianteController {
             return;
         }
 
-        AlertUtils.mostrarAdvertencia("En desarrollo",
-                "La eliminación de variantes estará disponible próximamente");
+        Optional<ButtonType> result = AlertUtils.mostrarConfirmacion(
+                "Confirmar eliminación",
+                "¿Está seguro de eliminar esta variante?",
+                "SKU: " + varianteSeleccionada.getSku() + "\n\n⚠️ Esta acción desactivará la variante"
+        );
+
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            ejecutarEnBackground(() -> {
+                try {
+                    varianteService.eliminar(varianteSeleccionada.getId());
+                    Platform.runLater(() -> {
+                        AlertUtils.mostrarExito("Éxito", "Variante eliminada correctamente");
+                        if (productoSeleccionado != null) {
+                            cargarVariantesDelProducto(productoSeleccionado);
+                        }
+                    });
+                } catch (Exception e) {
+                    logger.error("Error eliminando variante", e);
+                    Platform.runLater(() ->
+                            AlertUtils.mostrarError("Error", "No se pudo eliminar la variante: " + e.getMessage())
+                    );
+                }
+            });
+        }
     }
 
     @FXML

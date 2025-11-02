@@ -36,6 +36,36 @@ public class VarianteService {
         return guardada;
     }
 
+    public Variante actualizar(Variante variante) throws BusinessException, ValidationException, DataAccessException, NotFoundException {
+        logger.debug("Actualizando variante: {}", variante.getId());
+
+        if (variante.getId() == null) {
+            throw new ValidationException("id", "El ID de la variante es obligatorio");
+        }
+
+        validar(variante);
+
+        // Verificar que existe
+        varianteDAO.findById(variante.getId())
+                .orElseThrow(() -> new NotFoundException("Variante", variante.getId()));
+
+        Variante actualizada = varianteDAO.update(variante);
+        logger.info("Variante actualizada: {}", actualizada.getSku());
+        return actualizada;
+    }
+
+    public void eliminar(Integer id) throws BusinessException, DataAccessException, NotFoundException {
+        logger.debug("Eliminando variante: {}", id);
+
+        Variante variante = buscarPorId(id);
+
+        // Verificar si tiene ventas asociadas (opcional - puedes comentar esto si no importa)
+        // En ese caso, solo la desactiva en lugar de error
+
+        varianteDAO.delete(id);
+        logger.info("Variante eliminada: {}", id);
+    }
+
     public Variante buscarPorId(Integer id) throws NotFoundException, DataAccessException {
         return varianteDAO.findById(id)
                 .orElseThrow(() -> new NotFoundException("Variante", id));

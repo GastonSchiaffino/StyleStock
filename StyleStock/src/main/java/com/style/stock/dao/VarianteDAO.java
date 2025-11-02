@@ -98,6 +98,101 @@ public class VarianteDAO {
         }
     }
 
+    public Variante update(Variante variante) throws DataAccessException {
+        Connection conn = null;
+        try {
+            conn = dbManager.getConnection();
+            conn.setAutoCommit(false);
+
+            // 1. Actualizar variante
+            String sql = "UPDATE variantes SET codigo_barras = ?, precio_costo = ?, " +
+                    "precio_minorista = ?, precio_mayorista = ?, stock = ?, stock_minimo = ?, " +
+                    "activo = ? WHERE id = ?";
+
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, variante.getCodigoBarras());
+                ps.setDouble(2, variante.getPrecioCosto());
+                ps.setDouble(3, variante.getPrecioMinorista());
+                ps.setDouble(4, variante.getPrecioMayorista());
+                ps.setInt(5, variante.getStock());
+                ps.setInt(6, variante.getStockMinimo());
+                ps.setBoolean(7, variante.getActivo());
+                ps.setInt(8, variante.getId());
+
+                int affected = ps.executeUpdate();
+                if (affected == 0) {
+                    throw new DataAccessException("Variante no encontrada con ID: " + variante.getId());
+                }
+            }
+
+            // 2. Actualizar atributos: eliminar existentes y recrear
+            String sqlDeleteAttr = "DELETE FROM variante_atributos WHERE variante_id = ?";
+            try (PreparedStatement ps = conn.prepareStatement(sqlDeleteAttr)) {
+                ps.setInt(1, variante.getId());
+                ps.executeUpdate();
+            }
+
+            // 3. Insertar nuevos atributos
+            if (variante.getAtributos() != null && !variante.getAtributos().isEmpty()) {
+                String sqlAttr = "INSERT INTO variante_atributos (variante_id, atributo_id, valor) VALUES (?, ?, ?)";
+                try (PreparedStatement ps = conn.prepareStatement(sqlAttr)) {
+                    for (VarianteAtributo attr : variante.getAtributos()) {
+                        ps.setInt(1, variante.getId());
+                        ps.setInt(2, attr.getAtributoId());
+                        ps.setString(3, attr.getValor());
+                        ps.addBatch();
+                    }
+                    ps.executeBatch();
+                }
+            }
+
+            conn.commit();
+            logger.info("Variante actualizada: {}", variante.getSku());
+            return variante;
+
+        } catch (SQLException e) {
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (SQLException ex) {
+                    logger.error("Error en rollback", ex);
+                }
+            }
+            logger.error("Error actualizando variante", e);
+            throw new DataAccessException("Error actualizando variante: " + e.getMessage(), e);
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.setAutoCommit(true);
+                    conn.close();
+                } catch (SQLException e) {
+                    logger.error("Error cerrando conexión", e);
+                }
+            }
+        }
+    }
+
+    public void delete(Integer id) throws DataAccessException {
+        String sql = "UPDATE variantes SET activo = 0 WHERE id = ?";
+
+        try (Connection conn = dbManager.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, id);
+            int affected = ps.executeUpdate();
+
+            if (affected == 0) {
+                throw new DataAccessException("Variante no encontrada con ID: " + id);
+            }
+
+            logger.info("Variante desactivada: {}", id);
+
+        } catch (SQLException e) {
+            logger.error("Error eliminando variante", e);
+            throw new DataAccessException("Error eliminando variante: " + e.getMessage(), e);
+        }
+    }
+
     public Optional<Variante> findById(Integer id) throws DataAccessException {
         String sql = "SELECT * FROM variantes WHERE id = ?";
 

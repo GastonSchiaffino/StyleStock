@@ -6,7 +6,9 @@ import com.style.stock.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 // ============================================
 // VENTA SERVICE
@@ -91,6 +93,27 @@ public class VentaService {
 
     public List<Venta> listarRecientes(int limite) throws DataAccessException {
         return ventaDAO.findAll(limite);
+    }
+
+    public List<Venta> buscarPorRangoFechas(LocalDate desde, LocalDate hasta) throws DataAccessException {
+        logger.debug("Buscando ventas desde {} hasta {}", desde, hasta);
+        return ventaDAO.findByRangoFechas(desde, hasta);
+    }
+
+    public List<Venta> buscarPorCliente(Integer clienteId, int limite) throws DataAccessException {
+        logger.debug("Buscando ventas del cliente: {}", clienteId);
+        return ventaDAO.findByCliente(clienteId, limite);
+    }
+
+    public Venta buscarPorNumeroComprobante(String numero) throws NotFoundException, DataAccessException {
+        logger.debug("Buscando venta por número: {}", numero);
+        return ventaDAO.findByNumeroComprobante(numero)
+                .orElseThrow(() -> new NotFoundException("Venta con número", numero));
+    }
+
+    public Map<String, Object> obtenerEstadisticasPeriodo(LocalDate desde, LocalDate hasta) throws DataAccessException {
+        logger.debug("Obteniendo estadísticas del período {} - {}", desde, hasta);
+        return ventaDAO.getEstadisticasPeriodo(desde, hasta);
     }
 
     public void anular(Integer id) throws BusinessException, DataAccessException, NotFoundException {

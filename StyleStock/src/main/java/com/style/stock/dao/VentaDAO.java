@@ -10,9 +10,7 @@ import java.sql.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 // ============================================
 // VENTA DAO
@@ -197,6 +195,127 @@ public class VentaDAO {
         } catch (SQLException e) {
             logger.error("Error buscando ventas por fecha", e);
             throw new DataAccessException("Error buscando ventas: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Busca ventas por rango de fechas
+     */
+    public List<Venta> findByRangoFechas(LocalDate desde, LocalDate hasta) throws DataAccessException {
+        String sql = "SELECT * FROM ventas WHERE fecha BETWEEN ? AND ? ORDER BY fecha DESC, hora DESC";
+        List<Venta> ventas = new ArrayList<>();
+
+        try (Connection conn = dbManager.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, desde.toString());
+            ps.setString(2, hasta.toString());
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Venta venta = mapResultSetToVenta(rs);
+                    venta.setDetalles(findDetallesByVenta(venta.getId()));
+                    venta.setPagos(findPagosByVenta(venta.getId()));
+                    ventas.add(venta);
+                }
+            }
+
+            return ventas;
+
+        } catch (SQLException e) {
+            logger.error("Error buscando ventas por rango", e);
+            throw new DataAccessException("Error buscando ventas: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Busca ventas por cliente
+     */
+    public List<Venta> findByCliente(Integer clienteId, int limit) throws DataAccessException {
+        String sql = "SELECT * FROM ventas WHERE cliente_id = ? ORDER BY fecha DESC, hora DESC LIMIT ?";
+        List<Venta> ventas = new ArrayList<>();
+
+        try (Connection conn = dbManager.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, clienteId);
+            ps.setInt(2, limit);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    ventas.add(mapResultSetToVenta(rs));
+                }
+            }
+
+            return ventas;
+
+        } catch (SQLException e) {
+            logger.error("Error buscando ventas por cliente", e);
+            throw new DataAccessException("Error buscando ventas: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Busca venta por número de comprobante
+     */
+    public Optional<Venta> findByNumeroComprobante(String numero) throws DataAccessException {
+        String sql = "SELECT * FROM ventas WHERE numero_comprobante = ?";
+
+        try (Connection conn = dbManager.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, numero);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Venta venta = mapResultSetToVenta(rs);
+                    venta.setDetalles(findDetallesByVenta(venta.getId()));
+                    venta.setPagos(findPagosByVenta(venta.getId()));
+                    return Optional.of(venta);
+                }
+            }
+            return Optional.empty();
+
+        } catch (SQLException e) {
+            logger.error("Error buscando venta por número", e);
+            throw new DataAccessException("Error buscando venta: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Obtiene estadísticas de ventas por período
+     */
+    public Map<String, Object> getEstadisticasPeriodo(LocalDate desde, LocalDate hasta) throws DataAccessException {
+        String sql = "SELECT " +
+                "COUNT(*) as total_ventas, " +
+                "SUM(total) as total_facturado, " +
+                "AVG(total) as ticket_promedio, " +
+                "SUM(CASE WHEN estado = 'COMPLETADA' THEN 1 ELSE 0 END) as completadas, " +
+                "SUM(CASE WHEN estado = 'ANULADA' THEN 1 ELSE 0 END) as anuladas " +
+                "FROM ventas WHERE fecha BETWEEN ? AND ?";
+
+        Map<String, Object> stats = new HashMap<>();
+
+        try (Connection conn = dbManager.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, desde.toString());
+            ps.setString(2, hasta.toString());
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    stats.put("totalVentas", rs.getInt("total_ventas"));
+                    stats.put("totalFacturado", rs.getDouble("total_facturado"));
+                    stats.put("ticketPromedio", rs.getDouble("ticket_promedio"));
+                    stats.put("completadas", rs.getInt("completadas"));
+                    stats.put("anuladas", rs.getInt("anuladas"));
+                }
+            }
+
+            return stats;
+
+        } catch (SQLException e) {
+            logger.error("Error obteniendo estadísticas", e);
+            throw new DataAccessException("Error obteniendo estadísticas: " + e.getMessage(), e);
         }
     }
 
