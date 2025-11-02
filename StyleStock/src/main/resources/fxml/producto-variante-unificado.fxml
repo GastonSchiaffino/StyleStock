@@ -16,8 +16,6 @@
         <Label text="PRODUCTOS Y VARIANTES"
                style="-fx-font-size: 20px; -fx-font-weight: bold;"/>
         <Pane HBox.hgrow="ALWAYS"/>
-        <Label text="Buscar:"/>
-        <TextField fx:id="txtBuscar" promptText="Código, nombre o SKU..." prefWidth="300"/>
         <Button text="Stock Bajo" onAction="#mostrarStockBajo"
                 style="-fx-background-color: #FF9800; -fx-text-fill: white;" styleClass="button"/>
     </HBox>
@@ -36,13 +34,26 @@
             <padding><Insets top="5" right="5" bottom="5" left="5"/></padding>
 
             <HBox alignment="CENTER_LEFT" spacing="10">
-                <Label text="📦 PRODUCTOS (Modelos Base)"
+                <Label text="PRODUCTOS (Modelos Base)"
                        style="-fx-font-size: 14px; -fx-font-weight: bold;"/>
                 <Pane HBox.hgrow="ALWAYS"/>
                 <Button fx:id="btnNuevoProducto" text="+ Nuevo Producto"
                         onAction="#nuevoProducto"
                         style="-fx-background-color: #2196F3; -fx-text-fill: white;"
                         styleClass="button"/>
+            </HBox>
+
+            <!-- FILTROS DE PRODUCTOS -->
+            <HBox alignment="CENTER_LEFT" spacing="10">
+                <Label text="🔍 FILTROS:" style="-fx-font-weight: bold;"/>
+                <Label text="Categoría:"/>
+                <ComboBox fx:id="cbFiltroCategoria" promptText="Todas"
+                          prefWidth="150" onAction="#aplicarFiltrosProductos"/>
+
+                <!-- Búsqueda de productos -->
+                <Label text="Buscar:"/>
+                <TextField fx:id="txtBuscar" promptText="Código o nombre..." prefWidth="200"/>
+                <Button text="🗑 Limpiar" onAction="#limpiarFiltrosProductos" styleClass="button"/>
             </HBox>
 
             <!-- TABLA DE PRODUCTOS -->
@@ -81,7 +92,7 @@
 
             <HBox alignment="CENTER_LEFT" spacing="10"
                   style="-fx-background-color: #E3F2FD; -fx-padding: 10; -fx-background-radius: 5;">
-                <Label text="🏷️ VARIANTES DEL PRODUCTO:"
+                <Label text="VARIANTES DEL PRODUCTO:"
                        style="-fx-font-size: 14px; -fx-font-weight: bold;"/>
                 <Label fx:id="lblProductoSeleccionado" text="Ninguno"
                        style="-fx-font-size: 14px; -fx-text-fill: #1976D2; -fx-font-weight: bold;"/>
@@ -93,12 +104,20 @@
                         disable="true"/>
             </HBox>
 
+            <!-- FILTROS DE VARIANTES -->
+            <HBox alignment="CENTER_LEFT" spacing="10">
+                <Label text="🔍 FILTROS:" style="-fx-font-weight: bold;"/>
+                <Label text="Atributo:"/>
+                <ComboBox fx:id="cbFiltroAtributo" promptText="Todos" prefWidth="120" onAction="#cargarValoresAtributoFiltro"/>
+                <Label text="Valor:"/>
+                <ComboBox fx:id="cbFiltroValorAtributo" promptText="Todos" prefWidth="120" onAction="#aplicarFiltrosVariantes"/>
+                <Button text="🗑 Limpiar" onAction="#limpiarFiltrosVariantes" styleClass="button"/>
+            </HBox>
             <!-- TABLA DE VARIANTES -->
             <TableView fx:id="tablaVariantes" VBox.vgrow="ALWAYS">
                 <columns>
                     <TableColumn fx:id="colVarId" text="ID" prefWidth="40"/>
                     <TableColumn fx:id="colVarSku" text="SKU" prefWidth="130"/>
-                    <TableColumn fx:id="colVarAtributos" text="Atributos" prefWidth="250"/>
                     <TableColumn fx:id="colVarPrecioCosto" text="Costo" prefWidth="90"/>
                     <TableColumn fx:id="colVarPrecioMin" text="P. Minorista" prefWidth="100"/>
                     <TableColumn fx:id="colVarPrecioMay" text="P. Mayorista" prefWidth="100"/>

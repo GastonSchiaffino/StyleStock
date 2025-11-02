@@ -64,6 +64,7 @@ public class ProductoVarianteController {
     @FXML private ComboBox<Categoria> cbFiltroCategoria; // NUEVO
     @FXML private ComboBox<String> cbFiltroAtributo; // NUEVO
     @FXML private TextField txtFiltroValorAtributo; // NUEVO
+    @FXML private ComboBox<String> cbFiltroValorAtributo;
     @FXML private Label lblInfoProducto;
     @FXML private Label lblProductoSeleccionado;
     @FXML private Label lblTotalVariantes;
@@ -136,9 +137,16 @@ public class ProductoVarianteController {
                 if (nuevo != null) {
                     cargarAtributosParaFiltro(nuevo);
                 } else {
-                    if (cbFiltroAtributo != null) {
+                    if (productoSeleccionado == null) {
+                        limpiarFiltrosVariantes();
                         cbFiltroAtributo.getItems().clear();
+                    } else {
+                        // Si hay producto seleccionado, mantener sus atributos
+                        cargarAtributosDeProductoSeleccionado(productoSeleccionado);
                     }
+                   //if (cbFiltroAtributo != null) {
+                   //     cbFiltroAtributo.getItems().clear();
+                    // }
                 }
             });
         }
@@ -168,6 +176,10 @@ public class ProductoVarianteController {
                                 .collect(Collectors.toList());
                         cbFiltroAtributo.setItems(FXCollections.observableArrayList(nombresAtributos));
                     }
+                    // Limpiar valores al cambiar atributo
+                    if (cbFiltroValorAtributo != null) {
+                        cbFiltroValorAtributo.getItems().clear();
+                    }
                 });
             } catch (DataAccessException e) {
                 logger.error("Error cargando atributos para filtro", e);
@@ -175,6 +187,87 @@ public class ProductoVarianteController {
         });
     }
 
+    @FXML
+    private void cargarAtributosDeProductoSeleccionado(Producto producto) {
+        if (producto == null || producto.getCategoriaId() == null) {
+            return;
+        }
+
+        ejecutarEnBackground(() -> {
+            try {
+                // Obtener la categoría del producto
+                Categoria categoriaDelProducto = producto.getCategoria();
+
+                if (categoriaDelProducto == null) {
+                    // Si no está cargada, buscarla
+                    categoriaDelProducto = categoriaService.buscarPorId(producto.getCategoriaId());
+                }
+
+                // Cargar atributos de esa categoría
+                List<Atributo> atributos = categoriaService.obtenerAtributosDeCategoria(categoriaDelProducto.getId());
+
+                // Guardar para uso posterior
+                final Categoria categoriaFinal = categoriaDelProducto;
+                atributosCategoria = atributos;
+
+                Platform.runLater(() -> {
+                    if (cbFiltroAtributo != null) {
+                        List<String> nombresAtributos = atributos.stream()
+                                .map(Atributo::getNombre)
+                                .collect(Collectors.toList());
+                        nombresAtributos.add(0, "Todos");
+                        cbFiltroAtributo.setItems(FXCollections.observableArrayList(nombresAtributos));
+                        cbFiltroAtributo.setValue("Todos");
+
+                        // ⭐ OPCIONAL: Mostrar de qué categoría son los atributos
+                        logger.debug("Atributos cargados de categoría: {}", categoriaFinal.getNombre());
+                    }
+
+                    // Limpiar el ComboBox de valores al cambiar de producto
+                    if (cbFiltroValorAtributo != null) {
+                        cbFiltroValorAtributo.getItems().clear();
+                    }
+                });
+
+            } catch (DataAccessException | NotFoundException e) {
+                logger.error("Error cargando atributos del producto seleccionado", e);
+            }
+        });
+    }
+
+    @FXML
+    private void cargarValoresAtributoFiltro() {
+        String atributoNombre = cbFiltroAtributo.getValue();
+        if (atributoNombre == null || atributoNombre.isEmpty()) {
+            cbFiltroValorAtributo.getItems().clear();
+            return;
+        }
+
+        ejecutarEnBackground(() -> {
+            try {
+                // Buscar el atributo por nombre
+                Atributo atributo = atributosCategoria.stream()
+                        .filter(a -> a.getNombre().equals(atributoNombre))
+                        .findFirst()
+                        .orElse(null);
+
+                if (atributo != null) {
+                    List<ValorAtributo> valores = valorAtributoService.listarPorAtributo(atributo.getId());
+
+                    Platform.runLater(() -> {
+                        List<String> nombresValores = valores.stream()
+                                .map(ValorAtributo::getValor)
+                                .collect(Collectors.toList());
+                        cbFiltroValorAtributo.setItems(FXCollections.observableArrayList(nombresValores));
+                    });
+                }
+            } catch (DataAccessException e) {
+                logger.error("Error cargando valores de atributo", e);
+            }
+        });
+    }
+
+    @FXML
     private void aplicarFiltrosProductos() {
         Categoria categoriaFiltro = cbFiltroCategoria != null ? cbFiltroCategoria.getValue() : null;
         String busqueda = txtBuscar.getText().trim().toLowerCase();
@@ -200,37 +293,39 @@ public class ProductoVarianteController {
         productosFiltrados.setAll(filtrados);
     }
 
+    @FXML
     private void aplicarFiltrosVariantes() {
         String atributoFiltro = cbFiltroAtributo != null ? cbFiltroAtributo.getValue() : null;
-        String valorFiltro = txtFiltroValorAtributo != null ?
-                txtFiltroValorAtributo.getText().trim().toLowerCase() : "";
+        String valorFiltro = cbFiltroValorAtributo != null ? cbFiltroValorAtributo.getValue() : null;
 
         List<Variante> filtradas = variantes.stream()
                 .filter(v -> {
-                    // Si no hay filtro de atributo, mostrar todas
+                    // Si no hay filtro, mostrar todas
                     if (atributoFiltro == null || atributoFiltro.isEmpty()) {
                         return true;
                     }
 
-                    // Buscar si la variante tiene ese atributo con el valor especificado
-                    return v.getAtributos().stream().anyMatch(va -> {
-                        // Buscar el nombre del atributo
-                        Atributo attr = atributosCategoria.stream()
-                                .filter(a -> a.getId().equals(va.getAtributoId()))
-                                .findFirst()
-                                .orElse(null);
+                    // Buscar el atributo en la variante
+                    Optional<VarianteAtributo> vaEncontrado = v.getAtributos().stream()
+                            .filter(va -> {
+                                Atributo attr = atributosCategoria.stream()
+                                        .filter(a -> a.getId().equals(va.getAtributoId()))
+                                        .findFirst()
+                                        .orElse(null);
+                                return attr != null && attr.getNombre().equals(atributoFiltro);
+                            })
+                            .findFirst();
 
-                        if (attr == null || !attr.getNombre().equals(atributoFiltro)) {
-                            return false;
-                        }
+                    if (vaEncontrado.isEmpty()) {
+                        return false;
+                    }
 
-                        // Si hay valor específico, filtrar por él
-                        if (!valorFiltro.isEmpty()) {
-                            return va.getValor().toLowerCase().contains(valorFiltro);
-                        }
+                    // Si hay valor específico, filtrar por él
+                    if (valorFiltro != null && !valorFiltro.isEmpty()) {
+                        return vaEncontrado.get().getValor().equals(valorFiltro);
+                    }
 
-                        return true;
-                    });
+                    return true;
                 })
                 .collect(Collectors.toList());
 
@@ -239,15 +334,22 @@ public class ProductoVarianteController {
     }
 
     @FXML
-    private void limpiarFiltros() {
+    private void limpiarFiltrosProductos() {
         if (cbFiltroCategoria != null) cbFiltroCategoria.setValue(null);
-        if (cbFiltroAtributo != null) cbFiltroAtributo.setValue(null);
-        if (txtFiltroValorAtributo != null) txtFiltroValorAtributo.clear();
         txtBuscar.clear();
 
         productosFiltrados.setAll(productos);
+    }
+
+    @FXML
+    private void limpiarFiltrosVariantes() {
+        if (cbFiltroAtributo != null) cbFiltroAtributo.setValue(null);
+        if (txtFiltroValorAtributo != null) txtFiltroValorAtributo.clear();
+
         variantesFiltradas.setAll(variantes);
     }
+
+
 
     // ============================================
     // CONFIGURACIÓN TABLAS
@@ -260,8 +362,14 @@ public class ProductoVarianteController {
 
         colProdCategoria.setCellValueFactory(cellData -> {
             Producto p = cellData.getValue();
-            if (p.getCategoria() != null) {
-                return new SimpleStringProperty(p.getCategoria().getNombre());
+            if (p.getCategoriaId() != null) {
+                Categoria cat;
+                try {
+                    cat = categoriaService.buscarPorId(p.getCategoriaId());
+                } catch (NotFoundException | DataAccessException e) {
+                    throw new RuntimeException(e);
+                }
+                return new SimpleStringProperty(cat.getNombre());
             }
             return new SimpleStringProperty("-");
         });
@@ -422,11 +530,16 @@ public class ProductoVarianteController {
                     actualizarEstadoBotonesProducto();
                     if (newVal != null) {
                         cargarVariantesDelProducto(newVal);
+                        cargarAtributosDeProductoSeleccionado(newVal);
                     } else {
                         variantes.clear();
                         variantesFiltradas.clear();
                         lblProductoSeleccionado.setText("Ninguno");
                         lblInfoProducto.setText("Seleccione un producto para ver sus variantes");
+
+                        if (cbFiltroCategoria.getValue() == null) {
+                            limpiarFiltrosVariantes();
+                        }
                     }
                 }
         );

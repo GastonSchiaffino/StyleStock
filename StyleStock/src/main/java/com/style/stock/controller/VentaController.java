@@ -19,6 +19,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -288,18 +291,15 @@ public class VentaController {
                     container.setStyle("-fx-padding: 8; -fx-background-radius: 5;");
 
                     // Línea 1: SKU + Producto
-                    HBox linea1 = new HBox(10);
+                    HBox linea = new HBox();
                     Label lblSku = new Label(variante.getSku());
                     lblSku.setStyle("-fx-font-weight: bold; -fx-font-size: 13px;");
 
-                    Label lblProducto = new Label(variante.getProducto() != null ?
-                            variante.getProducto().getNombre() : "");
+                    Label lblProducto = new Label(variante.getProducto() != null ? variante.getProducto().getNombre() : "");
                     lblProducto.setStyle("-fx-text-fill: #666;");
 
-                    linea1.getChildren().addAll(lblSku, new Label("-"), lblProducto);
+                    linea.getChildren().addAll(lblSku, new Label(" - "), lblProducto,new Separator(Orientation.VERTICAL));
 
-                    // Línea 2: Atributos
-                    HBox linea2 = new HBox(8);
                     if (variante.getAtributos() != null && !variante.getAtributos().isEmpty()) {
                         for (VarianteAtributo va : variante.getAtributos()) {
                             Label lblAttr = new Label(va.getValor());
@@ -310,26 +310,22 @@ public class VentaController {
                                             "-fx-font-size: 11px; " +
                                             "-fx-text-fill: #1976D2;"
                             );
-                            linea2.getChildren().add(lblAttr);
+                            linea.getChildren().addAll(lblAttr,new Separator(Orientation.VERTICAL));
                         }
                     }
 
-                    // Línea 3: Precios y Stock
-                    HBox linea3 = new HBox(15);
-
-                    Label lblPrecio = new Label(String.format("💰 $%.2f",
-                            variante.getPrecioMinorista()));
+                    boolean esMayorista = "MAYORISTA".equals(cbTipoVenta.getValue());
+                    Label lblPrecio = new Label(String.format("Precio: $%.2f",esMayorista ? variante.getPrecioMayorista() : variante.getPrecioMinorista()));
                     lblPrecio.setStyle("-fx-font-weight: bold; -fx-text-fill: #2E7D32;");
 
-                    Label lblStock = new Label(String.format("📦 Stock: %d",
-                            variante.getStock()));
+                    Label lblStock = new Label(String.format("📦 Stock: %d",variante.getStock()));
                     lblStock.setStyle(variante.isStockBajo() ?
                             "-fx-text-fill: #D32F2F; -fx-font-weight: bold;" :
                             "-fx-text-fill: #666;");
 
-                    linea3.getChildren().addAll(lblPrecio, new Separator(Orientation.VERTICAL), lblStock);
+                    linea.getChildren().addAll(lblPrecio, new Separator(Orientation.VERTICAL), lblStock);
 
-                    container.getChildren().addAll(linea1, linea2, linea3);
+                    container.getChildren().addAll(linea);
 
                     if (variante.isStockBajo()) {
                         container.setStyle(
@@ -676,6 +672,7 @@ public class VentaController {
             detalle.calcularSubtotal();
         }
 
+        configurarListaVariantes();
         tablaItems.refresh();
         actualizarTotales();
     }
