@@ -51,6 +51,11 @@ public class MainController {
     }
 
     @FXML
+    private void showHistorialVentas() throws IOException {
+        loadView("/fxml/historial-ventas-view.fxml");
+    }
+
+    @FXML
     private void showClientes() throws IOException {
         loadView("/fxml/cliente-view.fxml");
     }
@@ -63,13 +68,9 @@ public class MainController {
         loadView("/fxml/producto-variante-unificado.fxml");
     }
 
-    // ============================================
-    // ELIMINADO: Ya no existe vista separada de variantes
-    // Este método ahora hace lo mismo que showProductos
-    // ============================================
     @FXML
-    private void showVariantes() throws IOException {
-        loadView("/fxml/producto-variante-unificado.fxml");
+    private void showStock() throws IOException {
+        loadView("/fxml/stock-view.fxml");
     }
 
     @FXML

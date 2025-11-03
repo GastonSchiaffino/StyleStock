@@ -37,26 +37,23 @@
                 <VBox spacing="3">
                     <Button text="Nueva Venta" onAction="#showVentas" 
                             styleClass="submenu-button" maxWidth="Infinity"/>
-                    <Button text="Historial de Ventas" styleClass="submenu-button" maxWidth="Infinity"/>
+                    <Button text="Historial de Ventas" onAction="#showHistorialVentas" styleClass="submenu-button" maxWidth="Infinity"/>
                 </VBox>
             </TitledPane>
             
             <!-- INVENTARIO -->
             <TitledPane text="📦 INVENTARIO" expanded="false" styleClass="menu-group">
                 <VBox spacing="3">
-                    <Button text="Productos y Variantes" onAction="#showProductos"
-                            styleClass="submenu-button" maxWidth="Infinity"/>
-                    <Button text="Stock Bajo" styleClass="submenu-button" maxWidth="Infinity"/>
-                    <Button text="Categorías" onAction="#showCategorias" 
-                            styleClass="submenu-button" maxWidth="Infinity"/>
+                    <Button text="Productos y Variantes" onAction="#showProductos" styleClass="submenu-button" maxWidth="Infinity"/>
+                    <Button text="Stock Actual" onAction="#showStock"  styleClass="submenu-button" maxWidth="Infinity"/>
+                    <Button text="Categorías" onAction="#showCategorias" styleClass="submenu-button" maxWidth="Infinity"/>
                 </VBox>
             </TitledPane>
 
             <!-- CLIENTES -->
             <TitledPane text="👥 CLIENTES" expanded="false" styleClass="menu-group">
                 <VBox spacing="3">
-                    <Button text="Gestión de Clientes" onAction="#showClientes" 
-                            styleClass="submenu-button" maxWidth="Infinity"/>
+                    <Button text="Gestión de Clientes" onAction="#showClientes" styleClass="submenu-button" maxWidth="Infinity"/>
                     <Button text="Tipos de Cliente" styleClass="submenu-button" maxWidth="Infinity"/>
                 </VBox>
             </TitledPane>
@@ -75,10 +72,7 @@
             <!-- CONFIGURACIÓN -->
             <TitledPane text="⚙️ CONFIGURACIÓN" expanded="false" styleClass="menu-group">
                 <VBox spacing="3">
-                    <Button text="Atributos" styleClass="submenu-button" maxWidth="Infinity"/>
-                    <Button text="Métodos de Pago" styleClass="submenu-button" maxWidth="Infinity"/>
-                    <Button text="Configuración General" onAction="#showConfiguracion" 
-                            styleClass="submenu-button" maxWidth="Infinity"/>
+                    <Button text="Configuración General" onAction="#showConfiguracion" styleClass="submenu-button" maxWidth="Infinity"/>
                     <Button text="Backup" styleClass="submenu-button" maxWidth="Infinity"/>
                 </VBox>
             </TitledPane>

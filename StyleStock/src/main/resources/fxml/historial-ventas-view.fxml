@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox spacing="15" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.style.stock.controller.HistorialVentasController">
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <!-- TÍTULO -->
+    <HBox alignment="CENTER_LEFT" spacing="10">
+        <Label text="HISTORIAL DE VENTAS"
+               style="-fx-font-size: 20px; -fx-font-weight: bold;"/>
+    </HBox>
+
+    <Separator/>
+
+    <!-- TARJETAS DE ESTADÍSTICAS -->
+    <GridPane hgap="15" vgap="10">
+        <VBox spacing="5"
+              style="-fx-background-color: #E3F2FD; -fx-padding: 15; -fx-background-radius: 8;"
+              GridPane.columnIndex="0" GridPane.rowIndex="0">
+            <Label text="Total Ventas" style="-fx-font-weight: bold;"/>
+            <Label fx:id="lblTotalVentas" text="0"
+                   style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #1976D2;"/>
+        </VBox>
+
+        <VBox spacing="5"
+              style="-fx-background-color: #E8F5E9; -fx-padding: 15; -fx-background-radius: 8;"
+              GridPane.columnIndex="1" GridPane.rowIndex="0">
+            <Label text="Total Facturado" style="-fx-font-weight: bold;"/>
+            <Label fx:id="lblTotalFacturado" text="0.00"
+                   style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #388E3C;"/>
+        </VBox>
+
+        <VBox spacing="5"
+              style="-fx-background-color: #FFF3E0; -fx-padding: 15; -fx-background-radius: 8;"
+              GridPane.columnIndex="2" GridPane.rowIndex="0">
+            <Label text="Ticket Promedio" style="-fx-font-weight: bold;"/>
+            <Label fx:id="lblTicketPromedio" text="0.00"
+                   style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #F57C00;"/>
+        </VBox>
+        <VBox spacing="5"
+              style="-fx-background-color: #C8E6C9; -fx-padding: 15; -fx-background-radius: 8;"
+              GridPane.columnIndex="3" GridPane.rowIndex="0">
+            <Label text="Completadas" style="-fx-font-weight: bold;"/>
+            <Label fx:id="lblCompletadas" text="0"
+                   style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2E7D32;"/>
+        </VBox>
+        <VBox spacing="5"
+              style="-fx-background-color: #FFCDD2; -fx-padding: 15; -fx-background-radius: 8;"
+              GridPane.columnIndex="4" GridPane.rowIndex="0">
+            <Label text="Anuladas" style="-fx-font-weight: bold;"/>
+            <Label fx:id="lblAnuladas" text="0"
+                   style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #C62828;"/>
+        </VBox>
+    </GridPane>
+
+    <Separator/>
+
+    <!-- FILTROS -->
+    <TitledPane text="Filtros de Búsqueda" collapsible="false">
+        <GridPane hgap="10" vgap="10">
+            <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
+
+            <Label text="Desde:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+            <DatePicker fx:id="dpDesde" prefWidth="130"
+                        GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+
+            <Label text="Hasta:" GridPane.columnIndex="2" GridPane.rowIndex="0"/>
+            <DatePicker fx:id="dpHasta" prefWidth="130"
+                        GridPane.columnIndex="3" GridPane.rowIndex="0"/>
+
+            <Label text="Cliente:" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+            <ComboBox fx:id="cbCliente" promptText="Todos" prefWidth="200"
+                      GridPane.columnIndex="1" GridPane.rowIndex="1" GridPane.columnSpan="2"/>
+
+            <Label text="Estado:" GridPane.columnIndex="3" GridPane.rowIndex="1"/>
+            <ComboBox fx:id="cbEstado" prefWidth="130"
+                      GridPane.columnIndex="4" GridPane.rowIndex="1"/>
+
+            <Label text="Comprobante:" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+            <ComboBox fx:id="cbTipoComprobante" prefWidth="130"
+                      GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+
+            <Label text="Buscar N°:" GridPane.columnIndex="2" GridPane.rowIndex="2"/>
+            <TextField fx:id="txtBuscarNumero" promptText="Número comprobante" prefWidth="150"
+                       GridPane.columnIndex="3" GridPane.rowIndex="2"/>
+
+            <HBox spacing="10" alignment="CENTER_LEFT"
+                  GridPane.columnIndex="4" GridPane.rowIndex="2">
+                <Button text="Buscar" onAction="#buscarVentas"
+                        style="-fx-background-color: #2196F3; -fx-text-fill: white;"/>
+                <Button text="Limpiar" onAction="#limpiarFiltros"/>
+            </HBox>
+        </GridPane>
+    </TitledPane>
+
+    <!-- TABLA -->
+    <TableView fx:id="tablaVentas" VBox.vgrow="ALWAYS" prefHeight="300">
+        <columns>
+            <TableColumn fx:id="colId" text="ID" prefWidth="50"/>
+            <TableColumn fx:id="colNumero" text="Número" prefWidth="120"/>
+            <TableColumn fx:id="colFecha" text="Fecha/Hora" prefWidth="150"/>
+            <TableColumn fx:id="colCliente" text="Cliente" prefWidth="200"/>
+            <TableColumn fx:id="colTipo" text="Tipo" prefWidth="100"/>
+            <TableColumn fx:id="colComprobante" text="Comprobante" prefWidth="120"/>
+            <TableColumn fx:id="colItems" text="Items" prefWidth="60"/>
+            <TableColumn fx:id="colTotal" text="Total" prefWidth="100"/>
+            <TableColumn fx:id="colEstado" text="Estado" prefWidth="100"/>
+        </columns>
+    </TableView>
+
+    <!-- PANEL DETALLES -->
+    <VBox fx:id="panelDetalles" spacing="10" visible="false"
+          style="-fx-background-color: #F5F5F5; -fx-padding: 15; -fx-background-radius: 8;">
+        <Label text="DETALLES DE LA VENTA" style="-fx-font-weight: bold; -fx-font-size: 14px;"/>
+        <Separator/>
+
+        <GridPane hgap="20" vgap="5">
+            <Label text="Número:" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+            <Label fx:id="lblDetalleNumero" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+
+            <Label text="Fecha:" style="-fx-font-weight: bold;" GridPane.columnIndex="2" GridPane.rowIndex="0"/>
+            <Label fx:id="lblDetalleFecha" GridPane.columnIndex="3" GridPane.rowIndex="0"/>
+
+            <Label text="Cliente:" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+            <Label fx:id="lblDetalleCliente" GridPane.columnIndex="1" GridPane.rowIndex="1" GridPane.columnSpan="3"/>
+
+            <Label text="Tipo:" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+            <Label fx:id="lblDetalleTipo" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+        </GridPane>
+
+        <Label text="Productos:" style="-fx-font-weight: bold;"/>
+        <TableView fx:id="tablaDetalles" prefHeight="150">
+            <columns>
+                <TableColumn fx:id="colDetSku" text="SKU" prefWidth="100"/>
+                <TableColumn fx:id="colDetDescripcion" text="Descripción" prefWidth="300"/>
+                <TableColumn fx:id="colDetCantidad" text="Cant." prefWidth="60"/>
+                <TableColumn fx:id="colDetPrecio" text="Precio" prefWidth="80"/>
+                <TableColumn fx:id="colDetSubtotal" text="Subtotal" prefWidth="80"/>
+            </columns>
+        </TableView>
+
+        <Label text="Pagos:" style="-fx-font-weight: bold;"/>
+        <ListView fx:id="lvPagos" prefHeight="80"/>
+    </VBox>
+
+    <!-- BOTONES -->
+    <HBox spacing="10" alignment="CENTER_RIGHT">
+        <ProgressIndicator fx:id="progressIndicator" visible="false" prefWidth="25" prefHeight="25"/>
+        <Pane HBox.hgrow="ALWAYS"/>
+        <Button fx:id="btnVerDetalle" text="Ver Detalle" onAction="#verDetalle"/>
+        <Button fx:id="btnAnular" text="Anular Venta" onAction="#anularVenta"
+                style="-fx-background-color: #f44336; -fx-text-fill: white;"/>
+        <Button fx:id="btnImprimir" text="Imprimir" onAction="#imprimirVenta"/>
+        <Button fx:id="btnExportar" text="Exportar Excel" onAction="#exportarExcel"/>
+    </HBox>
+</VBox>

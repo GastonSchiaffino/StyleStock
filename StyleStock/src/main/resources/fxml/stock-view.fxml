@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox spacing="15" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.style.stock.controller.StockController">
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <!-- TÍTULO -->
+    <HBox alignment="CENTER_LEFT" spacing="15">
+        <Label text="📦 GESTIÓN DE STOCK"
+               style="-fx-font-size: 20px; -fx-font-weight: bold;"/>
+    </HBox>
+
+    <Separator/>
+
+    <!-- TABS -->
+    <TabPane VBox.vgrow="ALWAYS" tabClosingPolicy="UNAVAILABLE">
+
+        <!-- ============ TAB STOCK TOTAL ============ -->
+        <Tab>
+            <graphic>
+                <Label text="📊 STOCK TOTAL" style="-fx-font-weight: bold;"/>
+            </graphic>
+            <VBox spacing="15">
+                <padding><Insets top="15" right="15" bottom="15" left="15"/></padding>
+
+                <!-- RESUMEN -->
+                <HBox spacing="20">
+                    <VBox spacing="5" style="-fx-background-color: #E3F2FD; -fx-padding: 15; -fx-background-radius: 8;">
+                        <Label text="Total Variantes" style="-fx-font-weight: bold;"/>
+                        <Label fx:id="lblTotalVariantesTotal" text="0"
+                               style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #1976D2;"/>
+                    </VBox>
+
+                    <VBox spacing="5" style="-fx-background-color: #C8E6C9; -fx-padding: 15; -fx-background-radius: 8;">
+                        <Label text="Stock Total" style="-fx-font-weight: bold;"/>
+                        <Label fx:id="lblTotalStockTotal" text="0"
+                               style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #2E7D32;"/>
+                    </VBox>
+
+                    <VBox spacing="5" style="-fx-background-color: #FFF9C4; -fx-padding: 15; -fx-background-radius: 8;">
+                        <Label text="Valor Inventario" style="-fx-font-weight: bold;"/>
+                        <Label fx:id="lblValorInventario" text="0.00"
+                               style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #F57F17;"/>
+                    </VBox>
+                </HBox>
+
+                <!-- FILTROS -->
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Label text="Buscar:"/>
+                    <TextField fx:id="txtBuscarTotal" promptText="SKU o producto..." prefWidth="250"/>
+                    <Label text="Categoría:"/>
+                    <ComboBox fx:id="cbFiltroCategoria" promptText="Todas" prefWidth="150"/>
+                    <Button text="Limpiar" onAction="#limpiarFiltros"/>
+                    <Pane HBox.hgrow="ALWAYS"/>
+                    <Button text="🔄 Actualizar" onAction="#cargarStockTotal"
+                            style="-fx-background-color: #2196F3; -fx-text-fill: white;"/>
+                </HBox>
+
+                <!-- TABLA -->
+                <TableView fx:id="tablaStockTotal" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="colTotalSku" text="SKU" prefWidth="120"/>
+                        <TableColumn fx:id="colTotalProducto" text="Producto" prefWidth="250"/>
+                        <TableColumn fx:id="colTotalAtributos" text="Atributos" prefWidth="150"/>
+                        <TableColumn fx:id="colTotalCategoria" text="Categoría" prefWidth="120"/>
+                        <TableColumn fx:id="colTotalStock" text="Stock" prefWidth="80"/>
+                        <TableColumn fx:id="colTotalStockMin" text="Mínimo" prefWidth="80"/>
+                        <TableColumn fx:id="colTotalEstado" text="Estado" prefWidth="100"/>
+                    </columns>
+                </TableView>
+
+                <!-- BOTONES -->
+                <HBox spacing="10" alignment="CENTER_RIGHT">
+                    <Button text="Ajustar Stock" onAction="#ajustarStock"
+                            style="-fx-background-color: #4CAF50; -fx-text-fill: white;"/>
+                    <Button text="Exportar Excel" onAction="#exportarExcel"/>
+                </HBox>
+            </VBox>
+        </Tab>
+
+        <!-- ============ TAB STOCK BAJO ============ -->
+        <Tab>
+            <graphic>
+                <Label text="⚠️ STOCK BAJO" style="-fx-font-weight: bold; -fx-text-fill: #D32F2F;"/>
+            </graphic>
+            <VBox spacing="15">
+                <padding><Insets top="15" right="15" bottom="15" left="15"/></padding>
+
+                <!-- RESUMEN -->
+                <HBox spacing="20">
+                    <VBox spacing="5" style="-fx-background-color: #FFCDD2; -fx-padding: 15; -fx-background-radius: 8;">
+                        <Label text="Variantes con Stock Bajo" style="-fx-font-weight: bold;"/>
+                        <Label fx:id="lblTotalVariantes" text="0"
+                               style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #C62828;"/>
+                    </VBox>
+
+                    <VBox spacing="5" style="-fx-background-color: #FFE0B2; -fx-padding: 15; -fx-background-radius: 8;">
+                        <Label text="Total Unidades Faltantes" style="-fx-font-weight: bold;"/>
+                        <Label fx:id="lblTotalFaltante" text="0"
+                               style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #E65100;"/>
+                    </VBox>
+
+                    <Pane HBox.hgrow="ALWAYS"/>
+
+                    <VBox spacing="5" alignment="CENTER" style="-fx-background-color: #FFF9C4; -fx-padding: 15; -fx-background-radius: 8;">
+                        <Label text="💡 Recomendación" style="-fx-font-weight: bold;"/>
+                        <Label text="Haga doble clic en una variante" style="-fx-font-size: 11px;"/>
+                        <Label text="para ajustar su stock" style="-fx-font-size: 11px;"/>
+                    </VBox>
+                </HBox>
+
+                <HBox alignment="CENTER_RIGHT">
+                    <Button text="🔄 Actualizar" onAction="#cargarStockBajo"
+                            style="-fx-background-color: #2196F3; -fx-text-fill: white;"/>
+                </HBox>
+
+                <!-- TABLA -->
+                <TableView fx:id="tablaStockBajo" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="colSku" text="SKU" prefWidth="120"/>
+                        <TableColumn fx:id="colProducto" text="Producto" prefWidth="250"/>
+                        <TableColumn fx:id="colAtributos" text="Atributos" prefWidth="150"/>
+                        <TableColumn fx:id="colCategoria" text="Categoría" prefWidth="120"/>
+                        <TableColumn fx:id="colStock" text="Stock Actual" prefWidth="100"/>
+                        <TableColumn fx:id="colStockMin" text="Stock Mínimo" prefWidth="100"/>
+                        <TableColumn fx:id="colFaltante" text="Faltante" prefWidth="80"/>
+                    </columns>
+                </TableView>
+
+                <!-- BOTONES -->
+                <HBox spacing="10" alignment="CENTER_RIGHT">
+                    <Button text="Ajustar Stock" onAction="#ajustarStock"
+                            style="-fx-background-color: #4CAF50; -fx-text-fill: white;"/>
+                    <Button text="Exportar Excel" onAction="#exportarExcel"/>
+                </HBox>
+            </VBox>
+        </Tab>
+    </TabPane>
+
+    <!-- PROGRESS INDICATOR -->
+    <HBox alignment="CENTER">
+        <ProgressIndicator fx:id="progressIndicator" visible="false" prefWidth="30" prefHeight="30"/>
+    </HBox>
+</VBox>

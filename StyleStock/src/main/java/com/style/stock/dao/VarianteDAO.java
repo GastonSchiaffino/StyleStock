@@ -264,7 +264,7 @@ public class VarianteDAO {
     }
 
     public List<Variante> findStockBajo() throws DataAccessException {
-        String sql = "SELECT * FROM v_stock_bajo";
+        String sql = "SELECT * FROM variantes WHERE stock<=stock_minimo";
 
         List<Variante> variantes = new ArrayList<>();
 
