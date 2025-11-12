@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox spacing="15" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.style.stock.controller.MovimientoStockController">
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <HBox alignment="CENTER_LEFT" spacing="10">
+        <Label text="📦 MOVIMIENTOS DE STOCK"
+               style="-fx-font-size: 20px; -fx-font-weight: bold;"/>
+    </HBox>
+
+    <Separator/>
+
+    <!-- RESUMEN -->
+    <HBox spacing="20">
+        <VBox spacing="5" style="-fx-background-color: #E3F2FD; -fx-padding: 15; -fx-background-radius: 8;">
+            <Label text="Total Movimientos" style="-fx-font-weight: bold;"/>
+            <Label fx:id="lblTotalMovimientos" text="0"
+                   style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #1976D2;"/>
+        </VBox>
+
+        <VBox spacing="5" style="-fx-background-color: #C8E6C9; -fx-padding: 15; -fx-background-radius: 8;">
+            <Label text="Ingresos" style="-fx-font-weight: bold;"/>
+            <Label fx:id="lblIngresos" text="0"
+                   style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2E7D32;"/>
+        </VBox>
+
+        <VBox spacing="5" style="-fx-background-color: #FFCDD2; -fx-padding: 15; -fx-background-radius: 8;">
+            <Label text="Egresos" style="-fx-font-weight: bold;"/>
+            <Label fx:id="lblEgresos" text="0"
+                   style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #C62828;"/>
+        </VBox>
+
+        <VBox spacing="5" style="-fx-background-color: #FFE0B2; -fx-padding: 15; -fx-background-radius: 8;">
+            <Label text="Ajustes" style="-fx-font-weight: bold;"/>
+            <Label fx:id="lblAjustes" text="0"
+                   style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #E65100;"/>
+        </VBox>
+    </HBox>
+
+    <Separator/>
+
+    <!-- FILTROS -->
+    <TitledPane text="Filtros de Búsqueda" collapsible="false">
+        <GridPane hgap="15" vgap="10">
+            <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
+
+            <Label text="Desde:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+            <DatePicker fx:id="dpDesde" prefWidth="130" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+
+            <Label text="Hasta:" GridPane.columnIndex="2" GridPane.rowIndex="0"/>
+            <DatePicker fx:id="dpHasta" prefWidth="130" GridPane.columnIndex="3" GridPane.rowIndex="0"/>
+
+            <Label text="Tipo:" GridPane.columnIndex="4" GridPane.rowIndex="0"/>
+            <ComboBox fx:id="cbTipoMovimiento" prefWidth="130" GridPane.columnIndex="5" GridPane.rowIndex="0"/>
+
+            <Label text="Variante:" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+            <TextField fx:id="txtBuscarVariante" promptText="Buscar por SKU..." prefWidth="200"
+                       GridPane.columnIndex="1" GridPane.rowIndex="1" GridPane.columnSpan="2"/>
+
+            <ComboBox fx:id="cbVariante" prefWidth="250" GridPane.columnIndex="3" GridPane.rowIndex="1" GridPane.columnSpan="2"/>
+
+            <HBox spacing="10" GridPane.columnIndex="5" GridPane.rowIndex="1">
+                <Button text="Buscar" onAction="#buscarMovimientos"
+                        style="-fx-background-color: #2196F3; -fx-text-fill: white;"/>
+                <Button text="Limpiar" onAction="#limpiarFiltros"/>
+            </HBox>
+        </GridPane>
+    </TitledPane>
+
+    <!-- TABLA -->
+    <TableView fx:id="tablaMovimientos" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="colId" text="ID" prefWidth="50"/>
+            <TableColumn fx:id="colFecha" text="Fecha/Hora" prefWidth="150"/>
+            <TableColumn fx:id="colVariante" text="Variante" prefWidth="250"/>
+            <TableColumn fx:id="colTipo" text="Tipo" prefWidth="100"/>
+            <TableColumn fx:id="colCantidad" text="Cantidad" prefWidth="80"/>
+            <TableColumn fx:id="colStockAnt" text="Stock Ant." prefWidth="90"/>
+            <TableColumn fx:id="colStockNuevo" text="Stock Nuevo" prefWidth="100"/>
+            <TableColumn fx:id="colReferencia" text="Referencia" prefWidth="200"/>
+        </columns>
+    </TableView>
+
+    <!-- BOTONES -->
+    <HBox spacing="10" alignment="CENTER_RIGHT">
+        <ProgressIndicator fx:id="progressIndicator" visible="false" prefWidth="25" prefHeight="25"/>
+        <Pane HBox.hgrow="ALWAYS"/>
+        <Button text="Exportar Excel" onAction="#exportarExcel"/>
+    </HBox>
+
+    <!-- LEYENDA -->
+    <HBox spacing="20" style="-fx-background-color: #F5F5F5; -fx-padding: 10; -fx-background-radius: 5;">
+        <Label text="🟢 INGRESO" style="-fx-text-fill: #2E7D32; -fx-font-weight: bold;"/>
+        <Label text="🔴 EGRESO/VENTA" style="-fx-text-fill: #C62828; -fx-font-weight: bold;"/>
+        <Label text="🟠 AJUSTE" style="-fx-text-fill: #E65100; -fx-font-weight: bold;"/>
+    </HBox>
+</VBox>

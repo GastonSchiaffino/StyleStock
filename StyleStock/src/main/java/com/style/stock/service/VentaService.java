@@ -68,12 +68,22 @@ public class VentaService {
             detalle.setVariante(variante);
         }
 
-        // Validar que los pagos cubran el total
+        // Validar pagos y determinar estado
         if (!venta.getPagos().isEmpty()) {
             double totalPagado = venta.getTotalPagado();
+
             if (totalPagado < venta.getTotal()) {
-                throw new BusinessException("El total pagado es menor al total de la venta");
+                // Pago parcial - marcar como PENDIENTE
+                venta.setEstado(Venta.EstadoVenta.PENDIENTE);
+                logger.info("Venta con pago parcial. Total: ${}, Pagado: ${}, Saldo: ${}",
+                        venta.getTotal(), totalPagado, venta.getSaldoPendiente());
+            } else {
+                // Pago completo
+                venta.setEstado(Venta.EstadoVenta.COMPLETADA);
             }
+        } else {
+            // Sin pagos - pendiente
+            venta.setEstado(Venta.EstadoVenta.PENDIENTE);
         }
 
         // Calcular totales
@@ -155,5 +165,57 @@ public class VentaService {
                 }
             }
         }
+    }
+
+    public List<Map<String, Object>> obtenerProductosMasVendidos(
+            LocalDate desde, LocalDate hasta, int limite, Integer categoriaId)
+            throws DataAccessException {
+        return ventaDAO.findProductosMasVendidos(desde, hasta, limite, categoriaId);
+    }
+
+    /**
+     * Registra un pago adicional a una venta pendiente
+     */
+    public Venta registrarPago(Integer ventaId, PagoVenta pago)
+            throws BusinessException, DataAccessException, NotFoundException {
+
+        logger.debug("Registrando pago para venta: {}", ventaId);
+
+        Venta venta = buscarPorId(ventaId);
+
+        if (venta.getEstado() == Venta.EstadoVenta.ANULADA) {
+            throw new BusinessException("No se pueden registrar pagos en ventas anuladas");
+        }
+
+        if (venta.getEstado() == Venta.EstadoVenta.COMPLETADA) {
+            throw new BusinessException("Esta venta ya está completamente pagada");
+        }
+
+        // Validar que el pago no exceda el saldo
+        double saldoPendiente = venta.getSaldoPendiente();
+        if (pago.getMonto() > saldoPendiente + 0.01) { // Tolerancia de 1 centavo
+            throw new BusinessException(
+                    String.format("El monto ($%.2f) excede el saldo pendiente ($%.2f)",
+                            pago.getMonto(), saldoPendiente)
+            );
+        }
+
+        // Registrar el pago
+        pago.setVentaId(ventaId);
+        ventaDAO.registrarPago(pago);
+
+        // Recargar la venta
+        venta = buscarPorId(ventaId);
+
+        // Actualizar estado si se completó el pago
+        if (!venta.tieneSaldo()) {
+            ventaDAO.actualizarEstado(ventaId, Venta.EstadoVenta.COMPLETADA);
+            venta.setEstado(Venta.EstadoVenta.COMPLETADA);
+            logger.info("Venta {} completada. Pago final registrado", venta.getNumeroComprobante());
+        } else {
+            logger.info("Pago registrado. Saldo restante: ${}", venta.getSaldoPendiente());
+        }
+
+        return venta;
     }
 }

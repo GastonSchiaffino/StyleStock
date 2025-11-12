@@ -155,6 +155,7 @@
         <Button fx:id="btnVerDetalle" text="Ver Detalle" onAction="#verDetalle"/>
         <Button fx:id="btnAnular" text="Anular Venta" onAction="#anularVenta"
                 style="-fx-background-color: #f44336; -fx-text-fill: white;"/>
+        <Button fx:id="btnRegistrarPago" text="Registrar Pago" onAction="#registrarPago" styleClass="button"/>
         <Button fx:id="btnImprimir" text="Imprimir" onAction="#imprimirVenta"/>
         <Button fx:id="btnExportar" text="Exportar Excel" onAction="#exportarExcel"/>
     </HBox>

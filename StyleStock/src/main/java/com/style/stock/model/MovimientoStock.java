@@ -20,7 +20,8 @@ public class MovimientoStock {
         INGRESO("INGRESO"),
         EGRESO("EGRESO"),
         AJUSTE("AJUSTE"),
-        VENTA("VENTA");
+        VENTA("VENTA"),
+        DEVOLUCION("DEVOLUCION");
 
         private final String valor;
         TipoMovimiento(String valor) { this.valor = valor; }

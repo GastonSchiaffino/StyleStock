@@ -120,6 +120,13 @@ public class Venta {
         return getTotalPagado() >= total;
     }
 
+    public Double getSaldoPendiente() {
+        return total - getTotalPagado();
+    }
+
+    public boolean tieneSaldo() {
+        return getSaldoPendiente() > 0.01; // Tolerancia de 1 centavo
+    }
     // Getters y Setters
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }

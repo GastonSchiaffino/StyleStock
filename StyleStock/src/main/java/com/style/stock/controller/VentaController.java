@@ -504,20 +504,37 @@ public class VentaController {
             return;
         }
 
+        // ✅ CAMBIO: Permitir venta sin pagos (quedará pendiente)
         if (pagos.isEmpty()) {
-            AlertUtils.mostrarAdvertencia("Pago requerido", "Agregue al menos un método de pago");
-            return;
+            Optional<ButtonType> confirmSinPago = AlertUtils.mostrarConfirmacion(
+                    "⚠️ Venta sin pagos",
+                    "¿Desea crear una venta PENDIENTE sin pagos iniciales?",
+                    "Podrá registrar los pagos posteriormente desde el historial."
+            );
+
+            if (confirmSinPago.isEmpty() || confirmSinPago.get() != ButtonType.OK) {
+                return;
+            }
         }
 
-        // Verificar que el pago cubra el total
+        // Verificar pagos
         double totalPagado = pagos.stream().mapToDouble(PagoVenta::getMonto).sum();
         double total = calcularTotal();
+        double saldo = total - totalPagado;
 
-        if (totalPagado < total) {
-            AlertUtils.mostrarAdvertencia("Pago insuficiente",
-                    String.format("Total: $%.2f - Pagado: $%.2f - Falta: $%.2f",
-                            total, totalPagado, total - totalPagado));
-            return;
+        // Permitir venta pendiente si hay saldo
+        if (saldo > 0.01) { // Tolerancia de 1 centavo
+            Optional<ButtonType> confirmacionParcial = AlertUtils.mostrarConfirmacion(
+                    "⚠️ Pago Parcial",
+                    "El pago es insuficiente. ¿Desea crear venta PENDIENTE?",
+                    String.format("Total: $%.2f\nPagado: $%.2f\nSaldo: $%.2f\n\n" +
+                                    "La venta quedará pendiente hasta completar el pago.",
+                            total, totalPagado, saldo)
+            );
+
+            if (confirmacionParcial.isEmpty() || confirmacionParcial.get() != ButtonType.OK) {
+                return; // Usuario cancela
+            }
         }
 
         // Confirmar
@@ -564,17 +581,32 @@ public class VentaController {
 
                 Venta guardada = ventaService.crear(venta);
 
+                Venta ventaCompleta = ventaService.buscarPorId(guardada.getId());
+
                 Platform.runLater(() -> {
-                    AlertUtils.mostrarExito("Éxito",
-                            "Venta completada correctamente\nComprobante: " + guardada.getNumeroComprobante());
+                    String mensaje;
+                    if (ventaCompleta.getEstado() == Venta.EstadoVenta.PENDIENTE) {
+                        mensaje = "⚠️ Venta PENDIENTE registrada\n\n" +
+                                "Comprobante N°: " + ventaCompleta.getNumeroComprobante() +
+                                "\nTotal: $" + String.format("%.2f", ventaCompleta.getTotal()) +
+                                "\nPagado: $" + String.format("%.2f", ventaCompleta.getTotalPagado()) +
+                                "\nSALDO: $" + String.format("%.2f", ventaCompleta.getSaldoPendiente());
+                    } else {
+                        mensaje = "✅ Venta completada correctamente\n\n" +
+                                "Comprobante N°: " + ventaCompleta.getNumeroComprobante() +
+                                "\nTotal: $" + String.format("%.2f", ventaCompleta.getTotal());
+                    }
+
+                    AlertUtils.mostrarExito("Éxito", mensaje);
 
                     Optional<ButtonType> imprimir = AlertUtils.mostrarConfirmacion(
                             "Imprimir",
-                            "¿Desea imprimir el comprobante?"
+                            "¿Desea imprimir el comprobante?",
+                            "Comprobante: " + ventaCompleta.getNumeroComprobante()
                     );
 
                     if (imprimir.isPresent() && imprimir.get() == ButtonType.OK) {
-                        imprimirComprobante(guardada);
+                        imprimirComprobante(ventaCompleta);
                     }
 
                     nuevaVenta();
@@ -653,9 +685,14 @@ public class VentaController {
         if (saldo <= 0) {
             lblSaldo.setStyle("-fx-text-fill: green; -fx-font-weight: bold;");
             btnCompletarVenta.setDisable(false);
+            btnCompletarVenta.setText("COMPLETAR VENTA");
+            btnCompletarVenta.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold; -fx-padding: 12 30;");
         } else {
-            lblSaldo.setStyle("-fx-text-fill: red; -fx-font-weight: bold;");
-            btnCompletarVenta.setDisable(true);
+            lblSaldo.setStyle("-fx-text-fill: #FF9800; -fx-font-weight: bold;");
+            // ✅ CAMBIO: Siempre habilitar el botón pero cambiar texto y color
+            btnCompletarVenta.setDisable(false);
+            btnCompletarVenta.setText("GUARDAR VENTA PENDIENTE");
+            btnCompletarVenta.setStyle("-fx-background-color: #FF9800; -fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold; -fx-padding: 12 30;");
         }
     }
 

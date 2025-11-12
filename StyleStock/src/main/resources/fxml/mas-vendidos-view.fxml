@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox spacing="15" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.style.stock.controller.MasVendidosController">
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <HBox alignment="CENTER_LEFT" spacing="10">
+        <Label text="🏆 PRODUCTOS MÁS VENDIDOS"
+               style="-fx-font-size: 20px; -fx-font-weight: bold;"/>
+    </HBox>
+
+    <Separator/>
+
+    <!-- RESUMEN -->
+    <HBox spacing="20">
+        <VBox spacing="5" style="-fx-background-color: #E8F5E9; -fx-padding: 15; -fx-background-radius: 8;">
+            <Label text="Total Unidades Vendidas" style="-fx-font-weight: bold;"/>
+            <Label fx:id="lblTotalUnidades" text="0"
+                   style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #388E3C;"/>
+        </VBox>
+
+        <VBox spacing="5" style="-fx-background-color: #E3F2FD; -fx-padding: 15; -fx-background-radius: 8;">
+            <Label text="Total Ingresos" style="-fx-font-weight: bold;"/>
+            <Label fx:id="lblTotalIngresos" text="0.00"
+                   style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #1976D2;"/>
+        </VBox>
+    </HBox>
+
+    <Separator/>
+
+    <!-- FILTROS -->
+    <TitledPane text="Filtros" collapsible="false">
+        <GridPane hgap="15" vgap="10">
+            <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
+
+            <Label text="Desde:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+            <DatePicker fx:id="dpDesde" prefWidth="130" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+
+            <Label text="Hasta:" GridPane.columnIndex="2" GridPane.rowIndex="0"/>
+            <DatePicker fx:id="dpHasta" prefWidth="130" GridPane.columnIndex="3" GridPane.rowIndex="0"/>
+
+            <Label text="Categoría:" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+            <ComboBox fx:id="cbCategoria" prefWidth="200" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+
+            <Label text="Top:" GridPane.columnIndex="2" GridPane.rowIndex="1"/>
+            <ComboBox fx:id="cbTop" prefWidth="80" GridPane.columnIndex="3" GridPane.rowIndex="1"/>
+
+            <HBox spacing="10" GridPane.columnIndex="4" GridPane.rowIndex="1" GridPane.rowSpan="2">
+                <Button text="Buscar" onAction="#buscarProductos"
+                        style="-fx-background-color: #2196F3; -fx-text-fill: white;"/>
+                <Button text="Limpiar" onAction="#limpiarFiltros"/>
+            </HBox>
+        </GridPane>
+    </TitledPane>
+
+    <!-- TABLA -->
+    <TableView fx:id="tablaProductos" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="colPosicion" text="Pos." prefWidth="50"/>
+            <TableColumn fx:id="colSku" text="SKU" prefWidth="120"/>
+            <TableColumn fx:id="colProducto" text="Producto" prefWidth="300"/>
+            <TableColumn fx:id="colCantidad" text="Unidades" prefWidth="100"/>
+            <TableColumn fx:id="colIngresos" text="Ingresos" prefWidth="120"/>
+            <TableColumn fx:id="colPorcentaje" text="'%' del Total" prefWidth="100"/>
+        </columns>
+    </TableView>
+
+    <!-- BOTONES -->
+    <HBox spacing="10" alignment="CENTER_RIGHT">
+        <ProgressIndicator fx:id="progressIndicator" visible="false" prefWidth="25" prefHeight="25"/>
+        <Pane HBox.hgrow="ALWAYS"/>
+        <Button text="Exportar Excel" onAction="#exportarExcel"/>
+    </HBox>
+</VBox>

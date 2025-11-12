@@ -79,13 +79,18 @@ public class MainController {
     }
 
     @FXML
-    private void showConfiguracion() throws IOException {
-        loadView("/fxml/configuracion-view.fxml");
+    private void showMasVendidos() throws IOException {
+        loadView("/fxml/mas-vendidos-view.fxml");
     }
 
     @FXML
-    private void showReportes() throws IOException {
-        loadView("/fxml/reportes-view.fxml");
+    private void showMovimientosStock() throws IOException {
+        loadView("/fxml/movimientos-stock-view.fxml");
+    }
+
+    @FXML
+    private void showConfiguracion() throws IOException {
+        loadView("/fxml/configuracion-view.fxml");
     }
 
     private void loadView(String fxmlPath) throws IOException {

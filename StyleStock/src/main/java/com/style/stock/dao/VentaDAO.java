@@ -443,4 +443,127 @@ public class VentaDAO {
         
         return p;
     }
+
+    public List<Map<String, Object>> findProductosMasVendidos(
+            LocalDate desde, LocalDate hasta, int limite, Integer categoriaId)
+            throws DataAccessException {
+
+        String sql = "SELECT " +
+                "v.sku, " +
+                "p.nombre as producto, " +
+                "SUM(dv.cantidad) as cantidad, " +
+                "SUM(dv.subtotal) as ingresos " +
+                "FROM detalle_venta dv " +
+                "INNER JOIN variantes v ON dv.variante_id = v.id " +
+                "INNER JOIN productos p ON v.producto_id = p.id " +
+                "INNER JOIN ventas vt ON dv.venta_id = vt.id " +
+                "WHERE vt.fecha BETWEEN ? AND ? AND vt.estado = 'COMPLETADA' ";
+
+        if (categoriaId != null) {
+            sql += "AND p.categoria_id = ? ";
+        }
+
+        sql += "GROUP BY v.sku, p.nombre " +
+                "ORDER BY cantidad DESC " +
+                "LIMIT ?";
+
+        List<Map<String, Object>> resultados = new ArrayList<>();
+
+        try (Connection conn = dbManager.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, desde.toString());
+            ps.setString(2, hasta.toString());
+
+            if (categoriaId != null) {
+                ps.setInt(3, categoriaId);
+                ps.setInt(4, limite);
+            } else {
+                ps.setInt(3, limite);
+            }
+
+            try (ResultSet rs = ps.executeQuery()) {
+                int posicion = 1;
+                double totalIngresos = 0;
+
+                // Primera pasada: calcular total
+                List<Map<String, Object>> temp = new ArrayList<>();
+                while (rs.next()) {
+                    Map<String, Object> item = new HashMap<>();
+                    item.put("sku", rs.getString("sku"));
+                    item.put("producto", rs.getString("producto"));
+                    item.put("cantidad", rs.getInt("cantidad"));
+                    item.put("ingresos", rs.getDouble("ingresos"));
+                    totalIngresos += rs.getDouble("ingresos");
+                    temp.add(item);
+                }
+
+                // Segunda pasada: agregar porcentajes
+                for (Map<String, Object> item : temp) {
+                    item.put("posicion", posicion++);
+                    double ingresos = (Double) item.get("ingresos");
+                    double porcentaje = totalIngresos > 0 ? (ingresos / totalIngresos) * 100 : 0;
+                    item.put("porcentaje", String.format("%.1f%%", porcentaje));
+                    resultados.add(item);
+                }
+            }
+
+            return resultados;
+
+        } catch (SQLException e) {
+            logger.error("Error obteniendo productos más vendidos", e);
+            throw new DataAccessException("Error en consulta: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Registra un pago adicional a una venta
+     */
+    public void registrarPago(PagoVenta pago) throws DataAccessException {
+        String sql = "INSERT INTO pagos_venta (venta_id, metodo_pago_id, monto, cuotas, comision, observaciones) " +
+                "VALUES (?, ?, ?, ?, ?, ?)";
+
+        try (Connection conn = dbManager.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, pago.getVentaId());
+            ps.setInt(2, pago.getMetodoPagoId());
+            ps.setDouble(3, pago.getMonto());
+            ps.setInt(4, pago.getCuotas());
+            ps.setDouble(5, pago.getComision() != null ? pago.getComision() : 0.0);
+            ps.setString(6, pago.getObservaciones());
+
+            ps.executeUpdate();
+            logger.info("Pago adicional registrado para venta {}", pago.getVentaId());
+
+        } catch (SQLException e) {
+            logger.error("Error registrando pago", e);
+            throw new DataAccessException("Error registrando pago: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Actualiza el estado de una venta
+     */
+    public void actualizarEstado(Integer ventaId, Venta.EstadoVenta nuevoEstado) throws DataAccessException {
+        String sql = "UPDATE ventas SET estado = ? WHERE id = ?";
+
+        try (Connection conn = dbManager.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, nuevoEstado.getValor());
+            ps.setInt(2, ventaId);
+
+            int affected = ps.executeUpdate();
+            if (affected == 0) {
+                throw new DataAccessException("Venta no encontrada con ID: " + ventaId);
+            }
+
+            logger.info("Estado de venta {} actualizado a {}", ventaId, nuevoEstado.getValor());
+
+        } catch (SQLException e) {
+            logger.error("Error actualizando estado de venta", e);
+            throw new DataAccessException("Error actualizando estado: " + e.getMessage(), e);
+        }
+    }
 }

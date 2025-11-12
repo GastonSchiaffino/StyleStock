@@ -153,14 +153,39 @@ public class VarianteService {
     public void ajustarStock(Integer id, Integer cantidad, String motivo)
             throws BusinessException, DataAccessException, NotFoundException {
         Variante variante = buscarPorId(id);
-        int nuevoStock = variante.getStock() + cantidad;
+        int stockAnterior = variante.getStock();
+        int nuevoStock = stockAnterior + cantidad;
 
         if (nuevoStock < 0) {
             throw new BusinessException("El ajuste resultaría en stock negativo");
         }
 
+        // Actualizar stock
         varianteDAO.updateStock(id, nuevoStock);
-        logger.info("Stock ajustado para variante {}: {} -> {}", id, variante.getStock(), nuevoStock);
+
+        // Registrar movimiento
+        MovimientoStock movimiento = new MovimientoStock();
+        movimiento.setProductoId(id);
+        movimiento.setStockAnterior(stockAnterior);
+        movimiento.setStockNuevo(nuevoStock);
+        movimiento.setCantidad(Math.abs(cantidad));
+        movimiento.setReferencia(motivo);
+
+        // Determinar tipo de movimiento
+        if (cantidad > 0) {
+            movimiento.setTipo(MovimientoStock.TipoMovimiento.INGRESO);
+            movimiento.setObservaciones("Ajuste de ingreso manual");
+        } else {
+            movimiento.setTipo(MovimientoStock.TipoMovimiento.EGRESO);
+            movimiento.setObservaciones("Ajuste de egreso manual");
+        }
+
+        // Guardar movimiento
+        MovimientoStockService movService = new MovimientoStockService();
+        movService.registrarMovimiento(movimiento);
+
+        logger.info("Stock ajustado para variante {}: {} -> {} (Movimiento registrado)",
+                id, stockAnterior, nuevoStock);
     }
 
     public boolean verificarStock(Integer varianteId, Integer cantidad)

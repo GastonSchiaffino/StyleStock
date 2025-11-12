@@ -73,6 +73,7 @@ public class HistorialVentasController {
     @FXML private Label lblAnuladas;
 
     // Botones
+    @FXML private Button btnRegistrarPago;
     @FXML private Button btnVerDetalle;
     @FXML private Button btnAnular;
     @FXML private Button btnImprimir;
@@ -522,6 +523,12 @@ public class HistorialVentasController {
         btnAnular.setDisable(!haySeleccion ||
                 (ventaSeleccionada != null && ventaSeleccionada.getEstado() == Venta.EstadoVenta.ANULADA));
         btnImprimir.setDisable(!haySeleccion);
+
+        // ✅ NUEVO: Habilitar registrar pago solo si está pendiente
+        if (btnRegistrarPago != null) {
+            btnRegistrarPago.setDisable(!haySeleccion ||
+                    (ventaSeleccionada != null && ventaSeleccionada.getEstado() != Venta.EstadoVenta.PENDIENTE));
+        }
     }
 
     private void ejecutarEnBackground(Runnable tarea) {
@@ -533,5 +540,107 @@ public class HistorialVentasController {
                 Platform.runLater(() -> progressIndicator.setVisible(false));
             }
         }).start();
+    }
+
+    @FXML
+    private void registrarPago() {
+        if (ventaSeleccionada == null || ventaSeleccionada.getEstado() != Venta.EstadoVenta.PENDIENTE) {
+            AlertUtils.mostrarAdvertencia("Selección inválida",
+                    "Seleccione una venta PENDIENTE");
+            return;
+        }
+
+        // Diálogo para registrar pago
+        Dialog<PagoVenta> dialog = new Dialog<>();
+        dialog.setTitle("Registrar Pago");
+        dialog.setHeaderText(String.format("Venta: %s\nSaldo pendiente: $%.2f",
+                ventaSeleccionada.getNumeroComprobante(),
+                ventaSeleccionada.getSaldoPendiente()));
+
+        ButtonType btnGuardar = new ButtonType("Registrar", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(btnGuardar, ButtonType.CANCEL);
+
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20));
+
+        ComboBox<MetodoPago> cbMetodo = new ComboBox<>();
+        TextField txtMonto = new TextField();
+        TextField txtCuotas = new TextField("1");
+        TextArea txtObs = new TextArea();
+        txtObs.setPrefRowCount(3);
+
+        // Cargar métodos de pago
+        try {
+            cbMetodo.setItems(FXCollections.observableArrayList(
+                    new MetodoPagoService().listarTodos()
+            ));
+        } catch (DataAccessException e) {
+            logger.error("Error cargando métodos", e);
+        }
+
+        grid.add(new Label("Método de pago:"), 0, 0);
+        grid.add(cbMetodo, 1, 0);
+        grid.add(new Label("Monto:"), 0, 1);
+        grid.add(txtMonto, 1, 1);
+        grid.add(new Label("Cuotas:"), 0, 2);
+        grid.add(txtCuotas, 1, 2);
+        grid.add(new Label("Observaciones:"), 0, 3);
+        grid.add(txtObs, 1, 3);
+
+        dialog.getDialogPane().setContent(grid);
+
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == btnGuardar) {
+                try {
+                    PagoVenta pago = new PagoVenta();
+                    pago.setMetodoPago(cbMetodo.getValue());
+                    pago.setMetodoPagoId(cbMetodo.getValue().getId());
+                    pago.setMonto(Double.parseDouble(txtMonto.getText()));
+                    pago.setCuotas(Integer.parseInt(txtCuotas.getText()));
+                    pago.setObservaciones(txtObs.getText());
+                    pago.setComision(cbMetodo.getValue().calcularComision(pago.getMonto()));
+                    return pago;
+                } catch (Exception e) {
+                    Platform.runLater(() ->
+                            AlertUtils.mostrarAdvertencia("Datos inválidos",
+                                    "Verifique los datos ingresados")
+                    );
+                }
+            }
+            return null;
+        });
+
+        Optional<PagoVenta> result = dialog.showAndWait();
+        result.ifPresent(pago -> {
+            ejecutarEnBackground(() -> {
+                try {
+                    Venta actualizada = ventaService.registrarPago(
+                            ventaSeleccionada.getId(), pago
+                    );
+
+                    Platform.runLater(() -> {
+                        String mensaje;
+                        if (actualizada.getEstado() == Venta.EstadoVenta.COMPLETADA) {
+                            mensaje = "✅ Pago registrado - Venta COMPLETADA\n\n" +
+                                    String.format("Monto: $%.2f\nSaldo: $0.00", pago.getMonto());
+                        } else {
+                            mensaje = "Pago registrado correctamente\n\n" +
+                                    String.format("Monto: $%.2f\nSaldo restante: $%.2f",
+                                            pago.getMonto(), actualizada.getSaldoPendiente());
+                        }
+                        AlertUtils.mostrarExito("Éxito", mensaje);
+                        buscarVentas(); // Recargar
+                    });
+
+                } catch (BusinessException | DataAccessException | NotFoundException e) {
+                    logger.error("Error registrando pago", e);
+                    Platform.runLater(() ->
+                            AlertUtils.mostrarError("Error", e.getMessage())
+                    );
+                }
+            });
+        });
     }
 }

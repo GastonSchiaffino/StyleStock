@@ -35,9 +35,9 @@
             <!-- VENTAS -->
             <TitledPane text="💰 VENTAS" expanded="true" styleClass="menu-group">
                 <VBox spacing="3">
-                    <Button text="Nueva Venta" onAction="#showVentas" 
-                            styleClass="submenu-button" maxWidth="Infinity"/>
+                    <Button text="Nueva Venta" onAction="#showVentas" styleClass="submenu-button" maxWidth="Infinity"/>
                     <Button text="Historial de Ventas" onAction="#showHistorialVentas" styleClass="submenu-button" maxWidth="Infinity"/>
+                    <Button text="Productos Más Vendidos" onAction="#showMasVendidos" styleClass="submenu-button" maxWidth="Infinity"/>
                 </VBox>
             </TitledPane>
             
@@ -46,6 +46,7 @@
                 <VBox spacing="3">
                     <Button text="Productos y Variantes" onAction="#showProductos" styleClass="submenu-button" maxWidth="Infinity"/>
                     <Button text="Stock Actual" onAction="#showStock"  styleClass="submenu-button" maxWidth="Infinity"/>
+                    <Button text="Movimientos de Stock" onAction="#showMovimientosStock" styleClass="submenu-button" maxWidth="Infinity"/>
                     <Button text="Categorías" onAction="#showCategorias" styleClass="submenu-button" maxWidth="Infinity"/>
                 </VBox>
             </TitledPane>
@@ -55,17 +56,6 @@
                 <VBox spacing="3">
                     <Button text="Gestión de Clientes" onAction="#showClientes" styleClass="submenu-button" maxWidth="Infinity"/>
                     <Button text="Tipos de Cliente" styleClass="submenu-button" maxWidth="Infinity"/>
-                </VBox>
-            </TitledPane>
-
-            <!-- REPORTES -->
-            <TitledPane text="📊 REPORTES" expanded="false" styleClass="menu-group">
-                <VBox spacing="3">
-                    <Button text="Ventas por Período" onAction="#showReportes" 
-                            styleClass="submenu-button" maxWidth="Infinity"/>
-                    <Button text="Productos Más Vendidos" styleClass="submenu-button" maxWidth="Infinity"/>
-                    <Button text="Stock Valorizado" styleClass="submenu-button" maxWidth="Infinity"/>
-                    <Button text="Movimientos de Stock" styleClass="submenu-button" maxWidth="Infinity"/>
                 </VBox>
             </TitledPane>
 
